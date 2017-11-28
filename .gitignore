@@ -1,0 +1,6 @@
+
+*.ipynb
+
+data/
+
+\.idea/
