@@ -1,27 +1,22 @@
-# Project Title
-
-InstaCart Market Basket Analysis
+# Instacart Market Basket Analysis
 
 ## Team Members
-Robert Cowen
-Zhiwen Hu
-Linzuo Li
-Alex Wang
-Xiao Zeng
+###### Robert Cowen
+###### Zhiwen Hu
+###### Linzuo Li
+###### Alex Wang
+###### Xiao Zeng
 
 ## Getting Started
 
 These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
 
 ### Prerequisites
-
-Python 3.0 +
+```
+Python 3.0+
 numpy
 lightgbm
 pandas
-
-```
-Give examples
 ```
 
 ### Installing

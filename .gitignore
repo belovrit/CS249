@@ -1,6 +1,6 @@
 
 *.ipynb
 
-data/
+data/*.csv
 
 \.idea/
