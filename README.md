@@ -1,6 +1,13 @@
 # Project Title
 
-One Paragraph of project description goes here
+InstaCart Market Basket Analysis
+
+## Team Members
+Robert Cowen
+Zhiwen Hu
+Linzuo Li
+Alex Wang
+Xiao Zeng
 
 ## Getting Started
 
@@ -8,7 +15,10 @@ These instructions will get you a copy of the project up and running on your loc
 
 ### Prerequisites
 
-What things you need to install the software and how to install them
+Python 3.0 +
+numpy
+lightgbm
+pandas
 
 ```
 Give examples
@@ -68,7 +78,7 @@ Please read [CONTRIBUTING.md](https://gist.github.com/PurpleBooth/b24679402957c6
 
 ## Versioning
 
-We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/your/project/tags). 
+We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/your/project/tags).
 
 ## Authors
 
