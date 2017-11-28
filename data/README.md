@@ -1,4 +1,4 @@
 csv files given by Instacart
 
 Data can be download at
-(http://www.dropwizard.io/1.0.2/docs/)
+(https://tech.instacart.com/3-million-instacart-orders-open-sourced-d40d29ead6f2)
