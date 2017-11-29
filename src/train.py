@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
 import lightgbm as lgb
-
-DIR = './data/'
+import csv
+DIR = '../data/'
 
 priors = pd.read_csv(DIR + 'order_products__prior.csv', dtype={
             'order_id': np.int32,
@@ -31,6 +31,7 @@ products = pd.read_csv(DIR + 'products.csv', dtype={
         'aisle_id': np.uint8,
         'department_id': np.uint8},
         usecols=['product_id', 'aisle_id', 'department_id'])
+print('Joining data')
 # retrieve traning set
 train_orders = pd.merge(train, orders, on='order_id')
 del train
@@ -42,37 +43,89 @@ del priors
 test_orders = orders[orders.eval_set == 'test'].sort_values('order_id')
 # generate candidate set based on products to user
 user_products = pd.DataFrame()
+print('Getting list of product ordered from each user')
 user_products = prior_orders.groupby('user_id')['product_id'].apply(set)
 user_products = user_products.reset_index()
 user_products.columns = ['user_id', 'products']
 # Now generate the candidate set for test_orders
+print('Generating candidate Set for test data')
 test_orders['products'] = test_orders['user_id'].map(user_products['products'])
 # convert set to list
 test_orders['products'] = test_orders['products'].apply(lambda x: list(x))
 # expand product list, replicate each row
+print('Replicating each row based on list items')
 """ !!! This lamda function was copied from https://stackoverflow.com/questions/27263805/pandas-when-cell-contents-are-lists-create-a-row-for-each-element-in-the-list"""
 s = test_orders.apply(lambda x: pd.Series(x['products']),axis=1).stack().reset_index(level=1, drop=True)
 s.name = 'product_id'
 test_orders = test_orders.drop('products', axis=1).join(s.astype(np.uint16))
 
 def get_features(features, train=True):
-    label = []
     feature_vector = pd.DataFrame()
+    labels = []
+    feature_vector['order_id'] = features['order_id']
+    feature_vector['product_id'] = features['product_id']
+    feature_vector['order_dow'] = features['order_dow']
+    feature_vector['order_hour_of_day'] = features['order_hour_of_day']
+    feature_vector['days_since_prior_order'] = features['days_since_prior_order']
+    # get aisle and departid
+    feature_vector = pd.merge(features, products, on='product_id', how='left')
+    # get aisle and departid
     if train:
         # merge ordered product based on train set
-        label = features['reordered']
+        labels = feature_vector['reordered']
+        feature_vector.drop('reordered', axis=1)
+    return feature_vector, labels
+# declared used features
+features = ['order_dow','order_hour_of_day','days_since_prior_order',
+            'aisle_id', 'department_id' ]
+# parameter for lgbt
+params = {
+    'task': 'train',
+    'boosting_type': 'gbdt',
+    'objective': 'binary',
+    'metric': {'binary_logloss'},
+    'num_leaves': 96,
+    'max_depth': 10,
+    'feature_fraction': 0.9,
+    'bagging_fraction': 0.95,
+    'bagging_freq': 5
+}
+num_round = 10
+print('Generating training feature vectors')
+train_x, label = get_features(train_orders, train=True)
+print('Building dataset...')
+# keep features
+train_data = lgb.Dataset(train_x[features], label = label, categorical_feature=['aisle_id', 'department_id'])
+# starting to train
+print('Training......')
+bst = lgb.train(params, train_data, num_round)
+del train_x
+print('Predicting......')
+test_x, label = get_features(test_orders, train=False)
+pred = bst.predict(test_x[features]);
+print('Prediction Done......')
+test_x['confidence'] = pred
+result = test_x[['order_id', 'product_id', 'confidence']]
+del test_x
 
-    feature_vector['order_dow'] = features['order_dow']
-    feature_vector['order_hour_of_day'] = feature_vector['order_hour_of_day']
-    feature_vector['days_since_prior_order'] = features['days_since_prior_order']
-
-    return feature_vector, label
-
-
-
-
-
+"""
+Selecting product with confidence level above threshold.
+Then combine products within the same order together
+Write output to out.csv
+"""
+"""Threshold settings"""
+threshold= 0.6
+result = result[result['confidence'] >= threshold ]
+result = result.groupby('order_id')['product_id'].apply(list)
+result = result.reset_index()
+result.columns = ['order_id', 'products']
+result['products'] = result['products'].apply(lambda x: " ".join(str(num) for num in x))
+submission = pd.read_csv(DIR + 'sample_submission.csv')
+submission = submission.drop('products', axis=1)
+submission = pd.merge(submission, result, on='order_id', how='left')
+submission = submission.fillna("None")
+print("Writing output")
+submission.to_csv('out.csv', index=False, mode='w+', quoting=csv.QUOTE_NONE)
 """ TODO: Implement Cross-validation"""
-
 def cross_validate(feature_vector,labels):
     return None
