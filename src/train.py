@@ -59,7 +59,8 @@ s = test_orders.apply(lambda x: pd.Series(x['products']),axis=1).stack().reset_i
 s.name = 'product_id'
 test_orders = test_orders.drop('products', axis=1).join(s.astype(np.uint16))
 
-
+#user_num_orders = orders.groupby('user_id')['order_id'].count().astype(np.uint32).to_frame().reset_index()
+#user_num_orders.columns = ['user_id', 'number_of_orders']
 # Linzuo: product reorder rate and product total ordered times
 product_info = pd.DataFrame()
 product_info['reorder_rate'] = prior_orders.groupby('product_id')['reordered'].sum() / prior_orders.groupby('product_id')['reordered'].count()
@@ -72,6 +73,7 @@ del prior_orders
 def get_features(features, train=True):
     feature_vector = pd.DataFrame()
     labels = []
+    feature_vector['user_id'] = features['user_id']
     feature_vector['order_id'] = features['order_id']
     feature_vector['product_id'] = features['product_id']
     feature_vector['order_dow'] = features['order_dow']
@@ -80,6 +82,7 @@ def get_features(features, train=True):
     # get aisle and departid
     feature_vector = pd.merge(features, products, on='product_id', how='left')
     feature_vector = pd.merge(feature_vector, product_info, on='product_id', how='left')
+    #feature_vector = pd.merge(feature_vector, user_num_orders, on='user_id', how='left')
     # get aisle and departid
     if train:
         # merge ordered product based on train set
@@ -91,7 +94,7 @@ def get_features(features, train=True):
 
 
 features = ['order_dow', 'order_hour_of_day', 'days_since_prior_order',
-            'reorder_rate', 'order_total',
+            'reorder_rate', 'order_total', 'number_of_orders',
             'aisle_id', 'department_id']
 
 # parameter for lgbt
@@ -130,7 +133,7 @@ Then combine products within the same order together
 Write output to out.csv
 """
 """Threshold settings"""
-threshold = 0.7
+threshold = 0.8
 result = result[result['confidence'] >= threshold]
 result = result.groupby('order_id')['product_id'].apply(list).reset_index()
 result.columns = ['order_id', 'products']
