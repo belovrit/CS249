@@ -59,6 +59,16 @@ s = test_orders.apply(lambda x: pd.Series(x['products']),axis=1).stack().reset_i
 s.name = 'product_id'
 test_orders = test_orders.drop('products', axis=1).join(s.astype(np.uint16))
 
+
+# Linzuo: product reorder rate and product total ordered times
+product_info = pd.DataFrame()
+product_info['reorder_rate'] = prior_orders.groupby('product_id')['reordered'].sum() / prior_orders.groupby('product_id')['reordered'].count()
+product_info['order_total'] = prior_orders.groupby('product_id')['reordered'].count()
+product_info = product_info.reset_index()
+
+del prior_orders
+
+
 def get_features(features, train=True):
     feature_vector = pd.DataFrame()
     labels = []
@@ -69,15 +79,21 @@ def get_features(features, train=True):
     feature_vector['days_since_prior_order'] = features['days_since_prior_order']
     # get aisle and departid
     feature_vector = pd.merge(features, products, on='product_id', how='left')
+    feature_vector = pd.merge(feature_vector, product_info, on='product_id', how='left')
     # get aisle and departid
     if train:
         # merge ordered product based on train set
         labels = feature_vector['reordered']
         feature_vector.drop('reordered', axis=1)
     return feature_vector, labels
+
 # declared used features
-features = ['order_dow','order_hour_of_day','days_since_prior_order',
-            'aisle_id', 'department_id' ]
+
+
+features = ['order_dow', 'order_hour_of_day', 'days_since_prior_order',
+            'reorder_rate', 'order_total',
+            'aisle_id', 'department_id']
+
 # parameter for lgbt
 params = {
     'task': 'train',
@@ -127,4 +143,5 @@ submission.to_csv('out.csv', index=False, mode='w+', quoting=csv.QUOTE_NONE)
 
 """ TODO: Implement Cross-validation"""
 def cross_validate(feature_vector,labels):
+    
     return None
