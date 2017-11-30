@@ -94,7 +94,7 @@ def get_features(features, train=True):
 
 
 features = ['order_dow', 'order_hour_of_day', 'days_since_prior_order',
-            'reorder_rate', 'order_total', 'number_of_orders',
+            'reorder_rate', 'order_total',
             'aisle_id', 'department_id']
 
 # parameter for lgbt
@@ -146,5 +146,5 @@ submission.to_csv('out.csv', index=False, mode='w+', quoting=csv.QUOTE_NONE)
 
 """ TODO: Implement Cross-validation"""
 def cross_validate(feature_vector,labels):
-    
+
     return None
