@@ -49,7 +49,7 @@ user_products = user_products.reset_index()
 user_products.columns = ['user_id', 'products']
 # Now generate the candidate set for test_orders
 print('Generating candidate Set for test data')
-test_orders['products'] = test_orders['user_id'].map(user_products['products'])
+test_orders = pd.merge(test_orders, user_products, on='user_id', how='left')
 # convert set to list
 test_orders['products'] = test_orders['products'].apply(lambda x: list(x))
 # expand product list, replicate each row
@@ -90,19 +90,19 @@ params = {
     'bagging_fraction': 0.95,
     'bagging_freq': 5
 }
-num_round = 10
+num_round = 100
 print('Generating training feature vectors')
 train_x, label = get_features(train_orders, train=True)
 print('Building dataset...')
 # keep features
-train_data = lgb.Dataset(train_x[features], label = label, categorical_feature=['aisle_id', 'department_id'])
+train_data = lgb.Dataset(train_x[features], label=label, categorical_feature=['aisle_id', 'department_id'])
 # starting to train
 print('Training......')
 bst = lgb.train(params, train_data, num_round)
 del train_x
 print('Predicting......')
 test_x, label = get_features(test_orders, train=False)
-pred = bst.predict(test_x[features]);
+pred = bst.predict(test_x[features])
 print('Prediction Done......')
 test_x['confidence'] = pred
 result = test_x[['order_id', 'product_id', 'confidence']]
@@ -114,18 +114,17 @@ Then combine products within the same order together
 Write output to out.csv
 """
 """Threshold settings"""
-threshold= 0.6
-result = result[result['confidence'] >= threshold ]
-result = result.groupby('order_id')['product_id'].apply(list)
-result = result.reset_index()
+threshold = 0.7
+result = result[result['confidence'] >= threshold]
+result = result.groupby('order_id')['product_id'].apply(list).reset_index()
 result.columns = ['order_id', 'products']
 result['products'] = result['products'].apply(lambda x: " ".join(str(num) for num in x))
 submission = pd.read_csv(DIR + 'sample_submission.csv')
 submission = submission.drop('products', axis=1)
-submission = pd.merge(submission, result, on='order_id', how='left')
-submission = submission.fillna("None")
+submission = pd.merge(submission, result, on='order_id', how='left').fillna("None")
 print("Writing output")
 submission.to_csv('out.csv', index=False, mode='w+', quoting=csv.QUOTE_NONE)
+
 """ TODO: Implement Cross-validation"""
 def cross_validate(feature_vector,labels):
     return None
