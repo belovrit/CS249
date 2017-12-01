@@ -59,6 +59,7 @@ s = test_orders.apply(lambda x: pd.Series(x['products']),axis=1).stack().reset_i
 s.name = 'product_id'
 test_orders = test_orders.drop('products', axis=1).join(s.astype(np.uint16))
 
+
 #user_num_orders = orders.groupby('user_id')['order_id'].count().astype(np.uint32).to_frame().reset_index()
 #user_num_orders.columns = ['user_id', 'number_of_orders']
 # Linzuo: product reorder rate and product total ordered times
@@ -69,7 +70,16 @@ product_info['reorder_rate'] = product_info['reorder_total'] / product_info['ord
 product_info['avg_add_to_cart_order'] = prior_orders.groupby('product_id')['add_to_cart_order'].mean().astype(np.int8)
 product_info = product_info.reset_index()
 
-del prior_orders
+# Steven: Add features including relationship between products and days/hours
+#product_day = train_orders[['product_id', 'order_dow']]
+product_day_freq = pd.DataFrame(prior_orders[['product_id', 'order_dow']].groupby(['product_id', 'order_dow'])['order_dow'].count())
+product_day_freq = product_day_freq.rename(columns = {'order_dow': 'day_count'}).reset_index()
+#product_hour = train_orders[['product_id', 'order_hour_of_day']]
+product_hour_freq = pd.DataFrame(prior_orders[['product_id', 'order_hour_of_day']].groupby(['product_id', 'order_hour_of_day'])['order_hour_of_day'].count())
+product_hour_freq = product_hour_freq.rename(columns = {'order_hour_of_day': 'hour_count'}).reset_index()
+
+del prior_orders, user_products
+
 
 def get_features(features, train=True):
     feature_vector = pd.DataFrame()
@@ -83,6 +93,8 @@ def get_features(features, train=True):
     # get aisle and departid
     feature_vector = pd.merge(features, products, on='product_id', how='left')
     feature_vector = pd.merge(feature_vector, product_info, on='product_id', how='left')
+    feature_vector = pd.merge(feature_vector, product_day_freq, on=['product_id', 'order_dow'], how='left')
+    feature_vector = pd.merge(feature_vector, product_hour_freq, on=['product_id', 'order_hour_of_day'], how='left')
     #feature_vector = pd.merge(feature_vector, user_num_orders, on='user_id', how='left')
     # get aisle and departid
     if train:
@@ -95,7 +107,7 @@ def get_features(features, train=True):
 
 
 features = ['order_dow', 'order_hour_of_day', 'days_since_prior_order',
-            'reorder_rate', 'order_total','avg_add_to_cart_order',
+            'reorder_rate', 'order_total','avg_add_to_cart_order', 'day_count', 'hour_count',
             'reorder_total',
             'aisle_id', 'department_id']
 
