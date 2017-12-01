@@ -129,9 +129,11 @@ train_x, label = get_features(train_orders, train=True)
 print('Building dataset...')
 # keep features
 train_data = lgb.Dataset(train_x[features], label=label, categorical_feature=['aisle_id', 'department_id'])
+valid_data = lgb.Dataset(train_x, label)
+
 # starting to train
 print('Training......')
-bst = lgb.train(params, train_data, num_round)
+bst = lgb.train(params, train_data, num_round, valid_sets=valid_data, verbose_eval=5)
 del train_x
 print('Predicting......')
 test_x, label = get_features(test_orders, train=False)
