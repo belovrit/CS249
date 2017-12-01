@@ -63,12 +63,13 @@ test_orders = test_orders.drop('products', axis=1).join(s.astype(np.uint16))
 #user_num_orders.columns = ['user_id', 'number_of_orders']
 # Linzuo: product reorder rate and product total ordered times
 product_info = pd.DataFrame()
-product_info['reorder_rate'] = prior_orders.groupby('product_id')['reordered'].sum() / prior_orders.groupby('product_id')['reordered'].count()
 product_info['order_total'] = prior_orders.groupby('product_id')['reordered'].count()
+product_info['reorder_total'] = prior_orders.groupby('product_id')['reordered'].sum()
+product_info['reorder_rate'] = product_info['reorder_total'] / product_info['order_total']
+product_info['avg_add_to_cart_order'] = prior_orders.groupby('product_id')['add_to_cart_order'].mean().astype(np.int8)
 product_info = product_info.reset_index()
 
 del prior_orders
-
 
 def get_features(features, train=True):
     feature_vector = pd.DataFrame()
@@ -94,7 +95,8 @@ def get_features(features, train=True):
 
 
 features = ['order_dow', 'order_hour_of_day', 'days_since_prior_order',
-            'reorder_rate', 'order_total',
+            'reorder_rate', 'order_total','avg_add_to_cart_order',
+            'reorder_total',
             'aisle_id', 'department_id']
 
 # parameter for lgbt
@@ -133,7 +135,7 @@ Then combine products within the same order together
 Write output to out.csv
 """
 """Threshold settings"""
-threshold = 0.8
+threshold = 0.3
 result = result[result['confidence'] >= threshold]
 result = result.groupby('order_id')['product_id'].apply(list).reset_index()
 result.columns = ['order_id', 'products']
