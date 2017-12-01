@@ -135,7 +135,7 @@ Then combine products within the same order together
 Write output to out.csv
 """
 """Threshold settings"""
-threshold = 0.3
+threshold = 0.6
 result = result[result['confidence'] >= threshold]
 result = result.groupby('order_id')['product_id'].apply(list).reset_index()
 result.columns = ['order_id', 'products']
