@@ -63,9 +63,19 @@ product_day_freq = product_day_freq.rename(columns = {'order_dow': 'day_count'})
 product_hour_freq = pd.DataFrame(prior_orders[['product_id', 'order_hour_of_day']].groupby(['product_id', 'order_hour_of_day'])['order_hour_of_day'].count())
 product_hour_freq = product_hour_freq.rename(columns = {'order_hour_of_day': 'hour_count'}).reset_index()
 
+print('Generating user X product features')
+#user X product feature
+#calculating U_P featuers
+u_p = pd.DataFrame()
+u_p['up_orders'] = prior_orders.groupby(['user_id', 'product_id'])['reordered'].count()
+u_p['up_reorders'] = prior_orders.groupby(['user_id', 'product_id'])['reordered'].sum()
+u_p['up_reorder_rate'] = u_p['up_reorders'] / u_p['up_orders']
+u_p['up_add_to_cart_order'] = prior_orders.groupby(['user_id', 'product_id'])['add_to_cart_order'].mean()
+u_p['up_days_since_prior_order'] = prior_orders.groupby(['user_id', 'product_id'])['days_since_prior_order'].mean()
+u_p = u_p.reset_index()
+del prior_orders
 #Bobby:
 u_features = ['user_id','orders_sum', 'days_since_prior_std','avg_basket', 'avg_reorder', 'num_unique_items']
-
 user_features = pd.read_csv('user_info.csv', dtype={
        'user_id': np.uint32,
        'orders_sum': np.uint16,
@@ -74,8 +84,6 @@ user_features = pd.read_csv('user_info.csv', dtype={
        'avg_reorder': np.float32,
        'num_unique_items': np.uint16},
        usecols=u_features)
-
-del prior_orders
 
 def get_features(features, isTrain=True):
     # declared used features
@@ -98,6 +106,8 @@ def get_features(features, isTrain=True):
     s.name = 'product_id'
     feature_vector = feature_vector.drop('products', axis=1).join(s.astype(np.uint16))
 
+
+
     if isTrain:
         # merge ordered product based on train set
         feature_vector = feature_vector.merge(train, on=['order_id', 'product_id'], how='left')
@@ -108,12 +118,16 @@ def get_features(features, isTrain=True):
     feature_vector = feature_vector.merge(product_day_freq, on=['product_id', 'order_dow'], how='left')
     feature_vector = feature_vector.merge(product_hour_freq, on=['product_id', 'order_hour_of_day'], how='left')
     feature_vector = feature_vector.merge(user_features, on='user_id', how='left')
+    feature_vector = feature_vector.merge(u_p, on=['user_id', 'product_id'], how='left')
+    feature_vector['order_ratio'] = feature_vector['up_orders'] / feature_vector['orders_sum']
+    feature_vector['delta_days_since_prior_order'] = abs(feature_vector['up_days_since_prior_order'] - feature_vector['days_since_prior_order'])
     return feature_vector, labels
 
 features = ['order_dow', 'order_hour_of_day', 'days_since_prior_order',
         'reorder_rate', 'order_total','avg_add_to_cart_order', 'day_count', 'hour_count',
         'reorder_total', 'orders_sum', 'days_since_prior_std','avg_basket', 'avg_reorder', 'num_unique_items',
-        'aisle_id', 'department_id']
+        'aisle_id', 'department_id', 'up_orders', 'up_reorders', 'up_reorder_rate', 'up_add_to_cart_order', 
+        'up_days_since_prior_order', 'order_ratio']
 
 # parameter for lgbt
 params = {
@@ -156,7 +170,7 @@ Then combine products within the same order together
 Write output to out.csv
 """
 """Threshold settings"""
-threshold = 0.12
+threshold = 0.18
 result = result[result['confidence'] >= threshold]
 result = result.groupby('order_id')['product_id'].apply(list).reset_index()
 result.columns = ['order_id', 'products']
