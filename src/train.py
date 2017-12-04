@@ -28,8 +28,8 @@ orders = pd.read_csv(DIR + 'orders.csv', dtype={
 products = pd.read_csv(DIR + 'products.csv', dtype={
         'product_id': np.uint16,
         'order_id': np.int32,
-        'aisle_id': np.uint8,
-        'department_id': np.uint8},
+        'aisle_id': np.int16,
+        'department_id': np.int16},
         usecols=['product_id', 'aisle_id', 'department_id'])
 print('Joining data')
 # prior set
@@ -85,14 +85,19 @@ user_features = user_features.reset_index()
 u_p = u_p.merge(user_features, on=['user_id'], how='left')
 del user_features
 #Bobby:
-u_features = ['user_id','orders_sum', 'days_since_prior_std','avg_basket', 'avg_reorder', 'num_unique_items']
-user_features = pd.read_csv('user_info.csv', dtype={
+u_features = ['user_id','orders_sum', 'days_since_prior_std',
+              'avg_basket', 'avg_reorder', 'num_unique_items',
+              'comp_size', 'avg_diff', 'std_diff']
+user_features = pd.read_csv(DIR + 'user_info.csv', dtype={
        'user_id': np.uint32,
        'orders_sum': np.uint16,
        'days_since_prior_std': np.float32,
        'avg_basket': np.float32,
        'avg_reorder': np.float32,
-       'num_unique_items': np.uint16},
+       'num_unique_items': np.uint16,
+       'comp_size': np.uint32,
+       'avg_diff': np.float32,
+       'std_diff': np.float32},
        usecols=u_features)
 
 print('Getting sets by orders')
@@ -159,7 +164,9 @@ features = ['order_dow', 'order_hour_of_day', 'days_since_prior_order',
         'reorder_total', 'orders_sum', 'days_since_prior_std','avg_basket', 'avg_reorder', 'num_unique_items',
         'aisle_id', 'department_id', 'up_orders', 'up_reorders', 'up_reorder_rate', 'up_add_to_cart_order', 
         'up_days_since_prior_order', 'order_ratio', 'delta_dow', 'delta_order_hour_of_day', 'ordered_last_time', 
-        'reorder_total_ratio', 'reorder_total_ratio', 'numbers_since_last_order', 'first_ordered_number']
+        'reorder_total_ratio', 'reorder_total_ratio', 'numbers_since_last_order', 'first_ordered_number',
+        'comp_size', 'avg_diff', 'std_diff']
+#'comp_size', 'avg_diff', 'std_diff'
 
 # parameter for lgbt
 params = {
