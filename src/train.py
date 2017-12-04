@@ -72,8 +72,18 @@ u_p['up_reorders'] = prior_orders.groupby(['user_id', 'product_id'])['reordered'
 u_p['up_reorder_rate'] = u_p['up_reorders'] / u_p['up_orders']
 u_p['up_add_to_cart_order'] = prior_orders.groupby(['user_id', 'product_id'])['add_to_cart_order'].mean()
 u_p['up_days_since_prior_order'] = prior_orders.groupby(['user_id', 'product_id'])['days_since_prior_order'].mean()
+u_p['up_avg_dow'] = prior_orders.groupby(['user_id', 'product_id'])['order_dow'].mean()
+u_p['up_avg_hour'] = prior_orders.groupby(['user_id', 'product_id'])['order_hour_of_day'].mean()
+u_p['last_ordered_number'] = prior_orders.groupby(['user_id', 'product_id'])['order_number'].max()
+u_p['first_ordered_number'] = prior_orders.groupby(['user_id', 'product_id'])['order_number'].min()
+
 u_p = u_p.reset_index()
-del prior_orders
+
+user_features = pd.DataFrame()
+user_features['total_reorders'] = prior_orders.groupby(['user_id'])['reordered'].count()
+user_features = user_features.reset_index()
+u_p = u_p.merge(user_features, on=['user_id'], how='left')
+del user_features
 #Bobby:
 u_features = ['user_id','orders_sum', 'days_since_prior_std','avg_basket', 'avg_reorder', 'num_unique_items']
 user_features = pd.read_csv('user_info.csv', dtype={
@@ -85,6 +95,22 @@ user_features = pd.read_csv('user_info.csv', dtype={
        'num_unique_items': np.uint16},
        usecols=u_features)
 
+print('Getting sets by orders')
+products_by_orders = prior_orders.groupby(['user_id','order_number'])['product_id'].apply(set)
+products_by_orders = products_by_orders.reset_index()
+products_by_orders.columns = ['user_id', 'order_number', 'last_ordered_products']
+
+lastOrder = pd.DataFrame()
+lastOrder['order_number'] = prior_orders.groupby(['user_id'])['order_number'].max()
+lastOrder = lastOrder.reset_index()
+lastOrder = lastOrder.merge(products_by_orders, on=['user_id', 'order_number'], how='left')
+lastOrder.drop('order_number', axis=1)
+del products_by_orders
+del prior_orders
+
+def is_in_order(row):
+    return row['product_id'] in  row['last_ordered_products']
+        
 def get_features(features, isTrain=True):
     # declared used features
     labels = []
@@ -106,8 +132,6 @@ def get_features(features, isTrain=True):
     s.name = 'product_id'
     feature_vector = feature_vector.drop('products', axis=1).join(s.astype(np.uint16))
 
-
-
     if isTrain:
         # merge ordered product based on train set
         feature_vector = feature_vector.merge(train, on=['order_id', 'product_id'], how='left')
@@ -119,15 +143,23 @@ def get_features(features, isTrain=True):
     feature_vector = feature_vector.merge(product_hour_freq, on=['product_id', 'order_hour_of_day'], how='left')
     feature_vector = feature_vector.merge(user_features, on='user_id', how='left')
     feature_vector = feature_vector.merge(u_p, on=['user_id', 'product_id'], how='left')
+    feature_vector = feature_vector.merge(lastOrder, on='user_id', how='left')     
     feature_vector['order_ratio'] = feature_vector['up_orders'] / feature_vector['orders_sum']
     feature_vector['delta_days_since_prior_order'] = abs(feature_vector['up_days_since_prior_order'] - feature_vector['days_since_prior_order'])
+    feature_vector['delta_order_hour_of_day'] = abs(feature_vector['up_avg_hour'] - feature_vector['order_dow'])
+    feature_vector['reorder_total_ratio'] = feature_vector['up_reorders'] / feature_vector['total_reorders']
+    feature_vector['delta_dow'] = abs(feature_vector['up_days_since_prior_order'] - feature_vector['order_hour_of_day'])
+    feature_vector['ordered_last_time'] = feature_vector.apply(is_in_order,axis=1)
+    feature_vector['ordered_last_time'] = feature_vector['ordered_last_time'].astype(np.uint8)
+    feature_vector['numbers_since_last_order'] = feature_vector['order_number'] - feature_vector['last_ordered_number']
     return feature_vector, labels
 
 features = ['order_dow', 'order_hour_of_day', 'days_since_prior_order',
         'reorder_rate', 'order_total','avg_add_to_cart_order', 'day_count', 'hour_count',
         'reorder_total', 'orders_sum', 'days_since_prior_std','avg_basket', 'avg_reorder', 'num_unique_items',
         'aisle_id', 'department_id', 'up_orders', 'up_reorders', 'up_reorder_rate', 'up_add_to_cart_order', 
-        'up_days_since_prior_order', 'order_ratio']
+        'up_days_since_prior_order', 'order_ratio', 'delta_dow', 'delta_order_hour_of_day', 'ordered_last_time', 
+        'reorder_total_ratio', 'reorder_total_ratio', 'numbers_since_last_order', 'first_ordered_number']
 
 # parameter for lgbt
 params = {
