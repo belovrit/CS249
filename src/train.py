@@ -89,13 +89,27 @@ products = products.merge(product_info, on='product_id', how='left')
 # Steven: Add features including relationship between products and days/hours
 if arg == 0:
     print('Getting Steven')
-    #product_day = train_orders[['product_id', 'order_dow']]
+    # Frequency of the day of product being bought
     product_day_freq = pd.DataFrame(prior_orders[['product_id', 'order_dow']].groupby(['product_id', 'order_dow'])['order_dow'].count())
     product_day_freq = product_day_freq.rename(columns = {'order_dow': 'day_count'}).reset_index()
+    def dayFrequency(data):
+        return data[data.day_count.isin(data.day_count.nlargest(3))]
+    product_day_freq_max = product_day_freq.groupby('product_id', group_keys=False).apply(dayFrequency)
+    product_day_freq_max['day_count'] = 1
+    product_day_freq_max = product_day_freq_max.rename(columns={'day_count': 'max_day'})
+    product_day_freq = product_day_freq.merge(product_day_freq_max, on=['product_id', 'order_dow'], how='left').fillna(0)
+    del product_day_freq_max
     product_day_freq.to_csv(DIR + "product_day_freq.csv", encoding='utf-8', index=False)
-    #product_hour = train_orders[['product_id', 'order_hour_of_day']]
+    # Frequency of the hour of product being bought
     product_hour_freq = pd.DataFrame(prior_orders[['product_id', 'order_hour_of_day']].groupby(['product_id', 'order_hour_of_day'])['order_hour_of_day'].count())
     product_hour_freq = product_hour_freq.rename(columns = {'order_hour_of_day': 'hour_count'}).reset_index()
+    def hourFrequency(data):
+        return data[data.hour_count.isin(data.hour_count.nlargest(3))]
+    product_hour_freq_max = product_hour_freq.groupby('product_id', group_keys=False).apply(hourFrequency)
+    product_hour_freq_max['hour_count'] = 1
+    product_hour_freq_max = product_hour_freq_max.rename(columns={'hour_count': 'max_hour'})
+    product_hour_freq = product_hour_freq.merge(product_hour_freq_max, on=['product_id', 'order_hour_of_day'], how='left').fillna(0)
+    del product_hour_freq_max
     product_hour_freq.to_csv(DIR + "product_hour_freq.csv", encoding='utf-8', index=False)
 
 
@@ -104,11 +118,13 @@ if arg == 1:
     product_day_freq = pd.read_csv(DIR + 'product_day_freq.csv', dtype={
         'product_id': np.int32,
         'order_dow': np.int32,
-        'day_count': np.int32})
+        'day_count': np.int32,
+        'max_day': np.int32})
     product_hour_freq = pd.read_csv(DIR + 'product_hour_freq.csv', dtype={
         'product_id': np.int32,
         'order_hour_of_day': np.int32,
-        'hour_count': np.int32})
+        'hour_count': np.int32,
+        'max_hour': np.int32})
 
 
 
@@ -189,117 +205,116 @@ del products_by_orders
 del prior_orders
 
 
+if arg == 1:                            # if arg == 1, train. If not, just output csv files.
+    def is_in_order(row):
+        return row['product_id'] in  row['last_ordered_products']
 
+    def get_features(features, isTrain=True):
+        # declared used features
+        labels = []
+        feature_vector = pd.DataFrame()
+        feature_vector['user_id'] = features['user_id']
+        feature_vector['order_id'] = features['order_id']
+        feature_vector['order_dow'] = features['order_dow']
+        feature_vector['order_hour_of_day'] = features['order_hour_of_day']
+        feature_vector['days_since_prior_order'] = features['days_since_prior_order']
 
-def is_in_order(row):
-    return row['product_id'] in  row['last_ordered_products']
-        
-def get_features(features, isTrain=True):
-    # declared used features
-    labels = []
-    feature_vector = pd.DataFrame()
-    feature_vector['user_id'] = features['user_id']
-    feature_vector['order_id'] = features['order_id']
-    feature_vector['order_dow'] = features['order_dow']
-    feature_vector['order_hour_of_day'] = features['order_hour_of_day']
-    feature_vector['days_since_prior_order'] = features['days_since_prior_order']
+        print('Generating candidate Set for data')
+        feature_vector = feature_vector.merge(user_products, on='user_id', how='left')
+        # convert set to list
+        feature_vector['products'] = feature_vector['products'].apply(lambda x: list(x))
+        # expand product list, replicate each row
+        print('Replicating each row based on list items')
+        """ !!! This lamda function was copied from https://stackoverflow.com/questions/27263805/pandas-when-cell-contents-are-lists-create-a-row-for-each-element-in-the-list"""
+        s = feature_vector.apply(lambda x: pd.Series(x['products']),axis=1).stack().reset_index(level=1, drop=True)
+        s.name = 'product_id'
+        feature_vector = feature_vector.drop('products', axis=1).join(s.astype(np.uint16))
 
-    print('Generating candidate Set for data')
-    feature_vector = feature_vector.merge(user_products, on='user_id', how='left')
-    # convert set to list
-    feature_vector['products'] = feature_vector['products'].apply(lambda x: list(x))
-    # expand product list, replicate each row
-    print('Replicating each row based on list items')
-    """ !!! This lamda function was copied from https://stackoverflow.com/questions/27263805/pandas-when-cell-contents-are-lists-create-a-row-for-each-element-in-the-list"""
-    s = feature_vector.apply(lambda x: pd.Series(x['products']),axis=1).stack().reset_index(level=1, drop=True)
-    s.name = 'product_id'
-    feature_vector = feature_vector.drop('products', axis=1).join(s.astype(np.uint16))
+        if isTrain:
+            # merge ordered product based on train set
+            feature_vector = feature_vector.merge(train, on=['order_id', 'product_id'], how='left')
+            feature_vector['reordered'] = feature_vector['reordered'].fillna(0)
+            feature_vector['reordered'] = feature_vector['reordered'].astype(np.uint8)
+            labels = feature_vector['reordered']
+        feature_vector = feature_vector.merge(products, on='product_id', how='left')
+        feature_vector = feature_vector.merge(product_day_freq, on=['product_id', 'order_dow'], how='left')
+        feature_vector = feature_vector.merge(product_hour_freq, on=['product_id', 'order_hour_of_day'], how='left')
+        feature_vector = feature_vector.merge(user_features, on='user_id', how='left')
+        feature_vector = feature_vector.merge(u_p, on=['user_id', 'product_id'], how='left')
+        feature_vector = feature_vector.merge(lastOrder, on='user_id', how='left')
+        feature_vector['order_ratio'] = feature_vector['up_orders'] / feature_vector['orders_sum']
+        feature_vector['delta_days_since_prior_order'] = abs(feature_vector['up_days_since_prior_order'] - feature_vector['days_since_prior_order'])
+        feature_vector['delta_order_hour_of_day'] = abs(feature_vector['up_avg_hour'] - feature_vector['order_dow'])
+        feature_vector['reorder_total_ratio'] = feature_vector['up_reorders'] / feature_vector['total_reorders']
+        feature_vector['delta_dow'] = abs(feature_vector['up_days_since_prior_order'] - feature_vector['order_hour_of_day'])
+        feature_vector['ordered_last_time'] = feature_vector.apply(is_in_order,axis=1)
+        feature_vector['ordered_last_time'] = feature_vector['ordered_last_time'].astype(np.uint8)
+        feature_vector['numbers_since_last_order'] = feature_vector['order_number'] - feature_vector['last_ordered_number']
+        return feature_vector, labels
 
-    if isTrain:
-        # merge ordered product based on train set
-        feature_vector = feature_vector.merge(train, on=['order_id', 'product_id'], how='left')
-        feature_vector['reordered'] = feature_vector['reordered'].fillna(0)
-        feature_vector['reordered'] = feature_vector['reordered'].astype(np.uint8)
-        labels = feature_vector['reordered']
-    feature_vector = feature_vector.merge(products, on='product_id', how='left')
-    feature_vector = feature_vector.merge(product_day_freq, on=['product_id', 'order_dow'], how='left')
-    feature_vector = feature_vector.merge(product_hour_freq, on=['product_id', 'order_hour_of_day'], how='left')
-    feature_vector = feature_vector.merge(user_features, on='user_id', how='left')
-    feature_vector = feature_vector.merge(u_p, on=['user_id', 'product_id'], how='left')
-    feature_vector = feature_vector.merge(lastOrder, on='user_id', how='left')     
-    feature_vector['order_ratio'] = feature_vector['up_orders'] / feature_vector['orders_sum']
-    feature_vector['delta_days_since_prior_order'] = abs(feature_vector['up_days_since_prior_order'] - feature_vector['days_since_prior_order'])
-    feature_vector['delta_order_hour_of_day'] = abs(feature_vector['up_avg_hour'] - feature_vector['order_dow'])
-    feature_vector['reorder_total_ratio'] = feature_vector['up_reorders'] / feature_vector['total_reorders']
-    feature_vector['delta_dow'] = abs(feature_vector['up_days_since_prior_order'] - feature_vector['order_hour_of_day'])
-    feature_vector['ordered_last_time'] = feature_vector.apply(is_in_order,axis=1)
-    feature_vector['ordered_last_time'] = feature_vector['ordered_last_time'].astype(np.uint8)
-    feature_vector['numbers_since_last_order'] = feature_vector['order_number'] - feature_vector['last_ordered_number']
-    return feature_vector, labels
+    features = ['order_dow', 'order_hour_of_day', 'days_since_prior_order',
+            'reorder_rate', 'order_total','avg_add_to_cart_order', 'day_count', 'hour_count', 'max_day', 'max_hour',
+            'reorder_total', 'orders_sum', 'days_since_prior_std','avg_basket', 'avg_reorder', 'num_unique_items',
+            'aisle_id', 'department_id', 'up_orders', 'up_reorders', 'up_reorder_rate', 'up_add_to_cart_order',
+            'up_days_since_prior_order', 'order_ratio', 'delta_dow', 'delta_order_hour_of_day', 'ordered_last_time',
+            'reorder_total_ratio', 'reorder_total_ratio', 'numbers_since_last_order', 'first_ordered_number',
+            'comp_size', 'avg_diff', 'std_diff']
+    #'comp_size', 'avg_diff', 'std_diff'
 
-features = ['order_dow', 'order_hour_of_day', 'days_since_prior_order',
-        'reorder_rate', 'order_total','avg_add_to_cart_order', 'day_count', 'hour_count',
-        'reorder_total', 'orders_sum', 'days_since_prior_std','avg_basket', 'avg_reorder', 'num_unique_items',
-        'aisle_id', 'department_id', 'up_orders', 'up_reorders', 'up_reorder_rate', 'up_add_to_cart_order', 
-        'up_days_since_prior_order', 'order_ratio', 'delta_dow', 'delta_order_hour_of_day', 'ordered_last_time', 
-        'reorder_total_ratio', 'reorder_total_ratio', 'numbers_since_last_order', 'first_ordered_number',
-        'comp_size', 'avg_diff', 'std_diff']
-#'comp_size', 'avg_diff', 'std_diff'
+    # parameter for lgbt
+    params = {
+        'task': 'train',
+        'boosting_type': 'gbdt',
+        'objective': 'binary',
+        'metric': {'binary_logloss'},
+        'num_leaves': 96,
+        'max_depth': 10,
+        'feature_fraction': 0.9,
+        'bagging_fraction': 0.95,
+        'bagging_freq': 5
+    }
+    num_round = 100
+    print('Generating training feature vectors')
+    train_x, label = get_features(train_orders, isTrain=True)
+    del train_orders
+    print('Building dataset...')
+    # keep features
+    train_data = lgb.Dataset(train_x[features], label=label, categorical_feature=['aisle_id', 'department_id'])
+    valid_data = lgb.Dataset(train_x[features], label)
 
-# parameter for lgbt
-params = {
-    'task': 'train',
-    'boosting_type': 'gbdt',
-    'objective': 'binary',
-    'metric': {'binary_logloss'},
-    'num_leaves': 96,
-    'max_depth': 10,
-    'feature_fraction': 0.9,
-    'bagging_fraction': 0.95,
-    'bagging_freq': 5
-}
-num_round = 100
-print('Generating training feature vectors')
-train_x, label = get_features(train_orders, isTrain=True)
-del train_orders
-print('Building dataset...')
-# keep features
-train_data = lgb.Dataset(train_x[features], label=label, categorical_feature=['aisle_id', 'department_id'])
-valid_data = lgb.Dataset(train_x[features], label)
+    # starting to train
+    print('Training......')
+    bst = lgb.train(params, train_data, num_round, valid_sets=valid_data, verbose_eval=5)
+    del train_x
+    print('Predicting......')
+    test_x, label = get_features(test_orders, isTrain=False)
+    del user_products
+    del test_orders
+    pred = bst.predict(test_x[features])
+    print('Prediction Done......')
+    test_x['confidence'] = pred
+    result = test_x[['order_id', 'product_id', 'confidence']]
+    del test_x
 
-# starting to train
-print('Training......')
-bst = lgb.train(params, train_data, num_round, valid_sets=valid_data, verbose_eval=5)
-del train_x
-print('Predicting......')
-test_x, label = get_features(test_orders, isTrain=False)
-del user_products
-del test_orders
-pred = bst.predict(test_x[features])
-print('Prediction Done......')
-test_x['confidence'] = pred
-result = test_x[['order_id', 'product_id', 'confidence']]
-del test_x
+    """
+    Selecting product with confidence level above threshold.
+    Then combine products within the same order together
+    Write output to out.csv
+    """
+    """Threshold settings"""
+    threshold = 0.18
+    result = result[result['confidence'] >= threshold]
+    result = result.groupby('order_id')['product_id'].apply(list).reset_index()
+    result.columns = ['order_id', 'products']
+    result['products'] = result['products'].apply(lambda x: " ".join(str(num) for num in x))
+    submission = pd.read_csv(DIR + 'sample_submission.csv')
+    submission = submission.drop('products', axis=1)
+    submission = pd.merge(submission, result, on='order_id', how='left').fillna("None")
+    submission = submission.sort_values('order_id')
+    print("Writing output")
+    submission.to_csv('out.csv', index=False, mode='w+', quoting=csv.QUOTE_NONE)
 
-"""
-Selecting product with confidence level above threshold.
-Then combine products within the same order together
-Write output to out.csv
-"""
-"""Threshold settings"""
-threshold = 0.18 
-result = result[result['confidence'] >= threshold]
-result = result.groupby('order_id')['product_id'].apply(list).reset_index()
-result.columns = ['order_id', 'products']
-result['products'] = result['products'].apply(lambda x: " ".join(str(num) for num in x))
-submission = pd.read_csv(DIR + 'sample_submission.csv')
-submission = submission.drop('products', axis=1)
-submission = pd.merge(submission, result, on='order_id', how='left').fillna("None")
-submission = submission.sort_values('order_id')
-print("Writing output")
-submission.to_csv('out.csv', index=False, mode='w+', quoting=csv.QUOTE_NONE)
+    """ TODO: Implement Cross-validation"""
+    def cross_validate(feature_vector,labels):
 
-""" TODO: Implement Cross-validation"""
-def cross_validate(feature_vector,labels):
-
-    return None
+        return None
