@@ -1,9 +1,13 @@
+import sys
 import numpy as np
 import pandas as pd
 import lightgbm as lgb
 import csv
 DIR = '../data/'
 
+
+
+arg = int(sys.argv[1])
 priors = pd.read_csv(DIR + 'order_products__prior.csv', dtype={
             'order_id': np.int32,
             'product_id': np.uint16,
@@ -40,51 +44,120 @@ train = train[train['reordered'] == 1].drop('add_to_cart_order', axis=1)
 train_orders = orders[orders.eval_set == 'train']
 # retrieve test set
 test_orders = orders[orders.eval_set == 'test']
+
+
+
+
+
+
 # generate candidate set based on products to user
-user_products = pd.DataFrame()
 print('Getting list of product ordered from each user')
+user_products = pd.DataFrame()
 user_products = prior_orders.groupby('user_id')['product_id'].apply(set)
 user_products = user_products.reset_index()
 user_products.columns = ['user_id', 'products']
 
-# Linzuo: product reorder rate and product total ordered times
-product_info = pd.DataFrame()
-product_info['order_total'] = prior_orders.groupby('product_id')['reordered'].count()
-product_info['reorder_total'] = prior_orders.groupby('product_id')['reordered'].sum()
-product_info['reorder_rate'] = product_info['reorder_total'] / product_info['order_total']
-product_info['avg_add_to_cart_order'] = prior_orders.groupby('product_id')['add_to_cart_order'].mean().astype(np.int8)
-product_info = product_info.reset_index()
-products = products.merge(product_info, on='product_id', how='left')
-# Steven: Add features including relationship between products and days/hours
-#product_day = train_orders[['product_id', 'order_dow']]
-product_day_freq = pd.DataFrame(prior_orders[['product_id', 'order_dow']].groupby(['product_id', 'order_dow'])['order_dow'].count())
-product_day_freq = product_day_freq.rename(columns = {'order_dow': 'day_count'}).reset_index()
-#product_hour = train_orders[['product_id', 'order_hour_of_day']]
-product_hour_freq = pd.DataFrame(prior_orders[['product_id', 'order_hour_of_day']].groupby(['product_id', 'order_hour_of_day'])['order_hour_of_day'].count())
-product_hour_freq = product_hour_freq.rename(columns = {'order_hour_of_day': 'hour_count'}).reset_index()
 
-print('Generating user X product features')
+
+# Linzuo: product reorder rate and product total ordered times
+if arg == 0:
+    print('Getting Linzuo')
+    product_info = pd.DataFrame()
+    product_info['order_total'] = prior_orders.groupby('product_id')['reordered'].count()
+    product_info['reorder_total'] = prior_orders.groupby('product_id')['reordered'].sum()
+    product_info['reorder_rate'] = product_info['reorder_total'] / product_info['order_total']
+    product_info['avg_add_to_cart_order'] = prior_orders.groupby('product_id')['add_to_cart_order'].mean().astype(np.int8)
+    product_info = product_info.reset_index()
+    product_info.to_csv(DIR + "product_info.csv", encoding='utf-8', index=False)
+
+
+if arg == 1:
+    print('Getting Linzuo')
+    product_info = pd.read_csv(DIR + 'product_info.csv', dtype={
+        'product_id': np.int32,
+        'order_total': np.int32,
+        'reorder_total': np.float32,
+        'reorder_rate': np.float32,
+        'avg_add_to_cart_order': np.int8})
+
+products = products.merge(product_info, on='product_id', how='left')
+
+
+
+
+
+# Steven: Add features including relationship between products and days/hours
+if arg == 0:
+    print('Getting Steven')
+    #product_day = train_orders[['product_id', 'order_dow']]
+    product_day_freq = pd.DataFrame(prior_orders[['product_id', 'order_dow']].groupby(['product_id', 'order_dow'])['order_dow'].count())
+    product_day_freq = product_day_freq.rename(columns = {'order_dow': 'day_count'}).reset_index()
+    product_day_freq.to_csv(DIR + "product_day_freq.csv", encoding='utf-8', index=False)
+    #product_hour = train_orders[['product_id', 'order_hour_of_day']]
+    product_hour_freq = pd.DataFrame(prior_orders[['product_id', 'order_hour_of_day']].groupby(['product_id', 'order_hour_of_day'])['order_hour_of_day'].count())
+    product_hour_freq = product_hour_freq.rename(columns = {'order_hour_of_day': 'hour_count'}).reset_index()
+    product_hour_freq.to_csv(DIR + "product_hour_freq.csv", encoding='utf-8', index=False)
+
+
+if arg == 1:
+    print('Getting Steven')
+    product_day_freq = pd.read_csv(DIR + 'product_day_freq.csv', dtype={
+        'product_id': np.int32,
+        'order_dow': np.int32,
+        'day_count': np.int32})
+    product_hour_freq = pd.read_csv(DIR + 'product_hour_freq.csv', dtype={
+        'product_id': np.int32,
+        'order_hour_of_day': np.int32,
+        'hour_count': np.int32})
+
+
+
+
+
 #user X product feature
 #calculating U_P featuers
-u_p = pd.DataFrame()
-u_p['up_orders'] = prior_orders.groupby(['user_id', 'product_id'])['reordered'].count()
-u_p['up_reorders'] = prior_orders.groupby(['user_id', 'product_id'])['reordered'].sum()
-u_p['up_reorder_rate'] = u_p['up_reorders'] / u_p['up_orders']
-u_p['up_add_to_cart_order'] = prior_orders.groupby(['user_id', 'product_id'])['add_to_cart_order'].mean()
-u_p['up_days_since_prior_order'] = prior_orders.groupby(['user_id', 'product_id'])['days_since_prior_order'].mean()
-u_p['up_avg_dow'] = prior_orders.groupby(['user_id', 'product_id'])['order_dow'].mean()
-u_p['up_avg_hour'] = prior_orders.groupby(['user_id', 'product_id'])['order_hour_of_day'].mean()
-u_p['last_ordered_number'] = prior_orders.groupby(['user_id', 'product_id'])['order_number'].max()
-u_p['first_ordered_number'] = prior_orders.groupby(['user_id', 'product_id'])['order_number'].min()
+if arg == 0:
+    print('Generating user X product features')
+    u_p = pd.DataFrame()
+    u_p['up_orders'] = prior_orders.groupby(['user_id', 'product_id'])['reordered'].count()
+    u_p['up_reorders'] = prior_orders.groupby(['user_id', 'product_id'])['reordered'].sum()
+    u_p['up_reorder_rate'] = u_p['up_reorders'] / u_p['up_orders']
+    u_p['up_add_to_cart_order'] = prior_orders.groupby(['user_id', 'product_id'])['add_to_cart_order'].mean()
+    u_p['up_days_since_prior_order'] = prior_orders.groupby(['user_id', 'product_id'])['days_since_prior_order'].mean()
+    u_p['up_avg_dow'] = prior_orders.groupby(['user_id', 'product_id'])['order_dow'].mean()
+    u_p['up_avg_hour'] = prior_orders.groupby(['user_id', 'product_id'])['order_hour_of_day'].mean()
+    u_p['last_ordered_number'] = prior_orders.groupby(['user_id', 'product_id'])['order_number'].max()
+    u_p['first_ordered_number'] = prior_orders.groupby(['user_id', 'product_id'])['order_number'].min()
+    
+    u_p = u_p.reset_index()
+    
+    user_features = pd.DataFrame()
+    user_features['total_reorders'] = prior_orders.groupby(['user_id'])['reordered'].count()
+    user_features = user_features.reset_index()
+    u_p = u_p.merge(user_features, on=['user_id'], how='left')
+    del user_features
+    u_p.to_csv(DIR + "u_p.csv", encoding='utf-8', index=False)
 
-u_p = u_p.reset_index()
+if arg == 1:
+    print('Generating user X product features')
+    u_p = pd.read_csv(DIR + 'u_p.csv', dtype={
+        'user_id': np.int32,
+        'product_id': np.int32,
+        'up_orders': np.int32,
+        'up_reorders': np.int32,
+        'up_reorder_rate': np.float32,
+        'up_add_to_cart_order': np.float32,
+        'up_days_since_prior_order': np.float32,
+        'up_avg_dow': np.float32,
+        'up_avg_hour': np.float32,
+        'last_ordered_number': np.int32, 
+        'first_ordered_number': np.int32,
+        'total_reorders': np.int32})
 
-user_features = pd.DataFrame()
-user_features['total_reorders'] = prior_orders.groupby(['user_id'])['reordered'].count()
-user_features = user_features.reset_index()
-u_p = u_p.merge(user_features, on=['user_id'], how='left')
-del user_features
+
+
 #Bobby:
+print('Getting Bobby')
 u_features = ['user_id','orders_sum', 'days_since_prior_std',
               'avg_basket', 'avg_reorder', 'num_unique_items',
               'comp_size', 'avg_diff', 'std_diff']
@@ -100,11 +173,13 @@ user_features = pd.read_csv(DIR + 'user_info.csv', dtype={
        'std_diff': np.float32},
        usecols=u_features)
 
+
+
 print('Getting sets by orders')
 products_by_orders = prior_orders.groupby(['user_id','order_number'])['product_id'].apply(set)
 products_by_orders = products_by_orders.reset_index()
 products_by_orders.columns = ['user_id', 'order_number', 'last_ordered_products']
-
+    
 lastOrder = pd.DataFrame()
 lastOrder['order_number'] = prior_orders.groupby(['user_id'])['order_number'].max()
 lastOrder = lastOrder.reset_index()
@@ -112,6 +187,9 @@ lastOrder = lastOrder.merge(products_by_orders, on=['user_id', 'order_number'], 
 lastOrder.drop('order_number', axis=1)
 del products_by_orders
 del prior_orders
+
+
+
 
 def is_in_order(row):
     return row['product_id'] in  row['last_ordered_products']
@@ -209,7 +287,7 @@ Then combine products within the same order together
 Write output to out.csv
 """
 """Threshold settings"""
-threshold = 0.18
+threshold = 0.18 
 result = result[result['confidence'] >= threshold]
 result = result.groupby('order_id')['product_id'].apply(list).reset_index()
 result.columns = ['order_id', 'products']
