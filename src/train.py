@@ -142,6 +142,7 @@ if arg == 0:
     u_p['up_avg_hour'] = prior_orders.groupby(['user_id', 'product_id'])['order_hour_of_day'].mean()
     u_p['last_ordered_number'] = prior_orders.groupby(['user_id', 'product_id'])['order_number'].max()
     u_p['first_ordered_number'] = prior_orders.groupby(['user_id', 'product_id'])['order_number'].min()
+    u_p['bought_times'] = priors_orders_detail.groupby(['user_id', 'product_id']).cumcount() + 1
     
     u_p = u_p.reset_index()
     
@@ -258,7 +259,7 @@ if arg == 1:                            # if arg == 1, train. If not, just outpu
             'reorder_total_ratio', 'reorder_total_ratio', 'numbers_since_last_order', 'first_ordered_number',
             'comp_size', 'avg_diff', 'std_diff']
     #'comp_size', 'avg_diff', 'std_diff'
-
+    #0.3771438
     # parameter for lgbt
     params = {
         'task': 'train',
@@ -267,6 +268,8 @@ if arg == 1:                            # if arg == 1, train. If not, just outpu
         'metric': {'binary_logloss'},
         'num_leaves': 96,
         'max_depth': 10,
+        'learning_rate': 0.05,
+        'num_leaves': 81,
         'feature_fraction': 0.9,
         'bagging_fraction': 0.95,
         'bagging_freq': 5
