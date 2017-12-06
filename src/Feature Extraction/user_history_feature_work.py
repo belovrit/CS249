@@ -1,9 +1,19 @@
+################################################################
+#   user_history_feature_work.py
+#   Author: Team ZLABS
+#   Created for UCLA CS249
+#
+#   Work script to calculate the average difference between a users
+#   first orders versus their last orders
+###############################################################
+
 import numpy as np
 import pandas as pd
 import lightgbm as lgb
 import csv
-DIR = '../data/'
+DIR = '../../data/'
 
+#Load past csv information
 priors = pd.read_csv(DIR + 'order_products__prior.csv', dtype={
             'order_id': np.int32,
             'product_id': np.uint16,
@@ -35,6 +45,8 @@ products = pd.read_csv(DIR + 'products.csv', dtype={
         'department_id': np.uint8},
         usecols=['product_id', 'aisle_id', 'order_id', 'department_id'])
 print('Joining data')
+
+
 # prior set
 prior_orders = pd.merge(priors, orders, on='order_id')
 del priors
@@ -94,6 +106,8 @@ u_f = pd.DataFrame()
 order_sum_df = pd.DataFrame(prior_orders[['user_id','order_number']].groupby(['user_id','order_number'])['order_number'].count())
 order_sum_df = order_sum_df.rename(columns = {'order_number': 'ord_sum'}).reset_index()
 
+
+#Calculate the comparative differences between a users first orders and last orders
 print("DOING COMP ANALYSIS")
 wfile = open(DIR + "num5_features.csv", "w")
 wfile.write("user,comp_size,avg_diff,std_diff\n")
@@ -130,19 +144,3 @@ for u in user_features['user_id']:
 
 wfile.close()
 print("COMP DONE")
-
-op1 = pd.DataFrame(prior_orders[['user_id','order_number']]).groupby(['user_id','order_number'])
-options = [prior_orders[['user_id','order_number']], order_sum_df]
-
-df = (prior_orders.loc[prior_orders['user_id'] == 1])
-begin_size = len(df.loc[df['order_number'] == 1])
-num_orders = max(df['order_number'])
-end_size = len(df.loc[df['order_number'] == num_orders])
-comp_size = abs(end_size - begin_size)
-
-
-
-(prior_orders['user_id'])['order_number']
-
-
-#del prior_orders
