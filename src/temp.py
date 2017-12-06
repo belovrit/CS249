@@ -50,7 +50,7 @@ print('loaded products')
 print('Joining data')
 # prior set
 prior_orders = pd.merge(priors, orders, on='order_id')
-prior_orders['up_id'] = (prior_orders['user_id'] * 100000 + prior_orders['product_id']	).astype(np.uint64)
+prior_orders['up_id'] = (prior_orders['user_id'] * 100000 + prior_orders['product_id']  ).astype(np.uint64)
 del priors
 # retrieve traning set
 train = train[train['reordered'] == 1].drop('add_to_cart_order', axis=1)
@@ -219,7 +219,7 @@ features = ['order_dow', 'order_hour_of_day', 'days_since_prior_order',
         'numbers_since_last_order', 'first_last', 'first_ordered_number', 'ratio_since_first_purchase', 'bought_times',
         'comp_size', 'avg_diff', 'std_diff']
 #'comp_size', 'avg_diff', 'std_diff'
-"""
+
 params = {
     'task': 'train',
     'boosting_type': 'gbdt',
@@ -233,8 +233,8 @@ params = {
     'bagging_fraction': 0.95,
     'bagging_freq': 5
 }
-"""
 
+"""
 #parameter for lgbm
 params = {
     'task': 'train',
@@ -247,6 +247,7 @@ params = {
     'bagging_fraction': 0.95,
     'bagging_freq': 5
 }
+"""
 num_round = 100
 print('Generating training feature vectors')
 
@@ -278,7 +279,7 @@ Then combine products within the same order together
 Write output to out.csv
 """
 """Threshold settings"""
-threshold = 0.18
+threshold = 0.21
 result = result[result['confidence'] >= threshold]
 result = result.groupby('order_id')['product_id'].apply(list).reset_index()
 result.columns = ['order_id', 'products']
