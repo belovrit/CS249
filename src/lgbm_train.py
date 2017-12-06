@@ -59,31 +59,6 @@ print('Predicting......')
 pred = bst.predict(test_x[features])
 print('Prediction Done......')
 test_x['confidence'] = pred
-result = test_x[['order_id', 'product_id', 'confidence']]
-del test_x
-
-"""
-Selecting product with confidence level above threshold.
-Then combine products within the same order together
-Write output to out.csv
-"""
-"""Threshold settings"""
-threshold = 0.18
-result = result[result['confidence'] >= threshold]
-result = result.groupby('order_id')['product_id'].apply(list).reset_index()
-result.columns = ['order_id', 'products']
-result['products'] = result['products'].apply(lambda x: " ".join(str(num) for num in x))
-submission = pd.read_csv(DIR + 'sample_submission.csv')
-submission = submission.drop('products', axis=1)
-submission = pd.merge(submission, result, on='order_id', how='left').fillna("None")
-submission = submission.sort_values('order_id')
-print("Writing output")
-submission.to_csv('out.csv', index=False, mode='w+', quoting=csv.QUOTE_NONE)
-
+test_x[['order_id', 'product_id', 'confidence']].to_csv('lgbm_pred.csv', mode='w+', index=False)
 end = time.time()
 print(str((end - start) / 60), "minutes")
-
-""" TODO: Implement Cross-validation"""
-def cross_validate(feature_vector,labels):
-
-    return None
