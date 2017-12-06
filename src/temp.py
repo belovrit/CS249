@@ -121,14 +121,12 @@ user_features = pd.read_csv(DIR + 'user_info.csv', dtype={
 print('Getting sets by orders')
 users_last_order = prior_orders.groupby(['user_id'])['order_number'].max().to_frame().reset_index()
 last_orders = users_last_order.merge(prior_orders[['user_id', 'order_number', 'product_id']], on=['user_id', 'order_number'])
-last_orders = last_orders.groupby('user_id')['product_id'].apply(set).to_frame().reset_index()
-last_orders.columns = ['user_id', 'last_ordered_products']
+last_orders = last_orders.drop('order_number', axis = 1)
+last_orders['ordered_last_time'] = 1
+last_orders['up_id'] = last_orders['user_id'] * 100000 + last_orders['product_id']
 del prior_orders
 del users_last_order
 gc.collect()
-
-def is_in_order(row):
-    return row['product_id'] in  row['last_ordered_products']
 
 print('Creating feature vectors')
 # declared used features
@@ -167,12 +165,14 @@ del products
 feature_vector = feature_vector.merge(product_day_freq, on=['product_id', 'order_dow'], how='left')
 feature_vector = feature_vector.merge(product_hour_freq, on=['product_id', 'order_hour_of_day'], how='left')
 feature_vector = feature_vector.merge(user_features, on='user_id', how='left')
+
 del product_day_freq
 del product_hour_freq
 del user_features
 gc.collect()
 feature_vector = feature_vector.merge(u_p, on='up_id', how='left')
-feature_vector = feature_vector.merge(last_orders, on='user_id', how='left')
+feature_vector = feature_vector.merge(last_orders, on='up_id', how='left')
+feature_vector['ordered_last_time'] = feature_vector['ordered_last_time'].fillna(0)
 del u_p
 del last_orders
 gc.collect()
@@ -181,8 +181,8 @@ feature_vector['delta_days_since_prior_order'] = abs(feature_vector['up_days_sin
 feature_vector['delta_order_hour_of_day'] = abs(feature_vector['up_avg_hour'] - feature_vector['order_dow'])
 #feature_vector['reorder_total_ratio'] = feature_vector['up_reorders'] / feature_vector['total_reorders']
 feature_vector['delta_dow'] = abs(feature_vector['up_days_since_prior_order'] - feature_vector['order_hour_of_day'])
-feature_vector['ordered_last_time'] = feature_vector.apply(is_in_order,axis=1).astype(np.uint8)
 feature_vector['numbers_since_last_order'] = feature_vector['order_number'] - feature_vector['last_ordered_number']
+print('\t Done')
 
 features = ['order_dow', 'order_hour_of_day', 'days_since_prior_order',
         'reorder_rate', 'order_total','avg_add_to_cart_order', 'day_count', 'hour_count',
