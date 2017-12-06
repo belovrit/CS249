@@ -40,7 +40,6 @@ print("loaded orders")
 
 products = pd.read_csv(DIR + 'products.csv', dtype={
         'product_id': np.uint16,
-        'order_id': np.int32,
         'aisle_id': np.int16,
         'department_id': np.int16},
         usecols=['product_id', 'aisle_id', 'department_id'])
@@ -99,6 +98,18 @@ u_p['up_avg_hour'] = prior_orders.groupby('up_id')['order_hour_of_day'].mean()
 u_p['last_ordered_number'] = prior_orders.groupby('up_id')['order_number'].max()
 u_p = u_p.reset_index()
 
+
+print('Generating department and aisle features')
+temp = prior_orders.merge(products, on='product_id', how='left')
+user_aisle = temp.groupby(['user_id', 'aisle_id'])['product_id'].nunique().to_frame().reset_index()
+user_aisle.columns = ['user_id', 'aisle_id', 'aisle_orders']
+
+user_depart = temp.groupby(['user_id', 'department_id'])['product_id'].nunique().to_frame().reset_index()
+user_depart.columns = ['user_id', 'department_id', 'depart_orders']
+
+del temp
+gc.collect()
+
 #Bobby:
 print('Getting Bobby')
 u_features = ['user_id','orders_sum', 'days_since_prior_std',
@@ -124,6 +135,7 @@ last_orders = users_last_order.merge(prior_orders[['user_id', 'order_number', 'p
 last_orders = last_orders.drop('order_number', axis = 1)
 last_orders['ordered_last_time'] = 1
 last_orders['up_id'] = last_orders['user_id'] * 100000 + last_orders['product_id']
+last_orders= last_orders.drop(['user_id', 'product_id'], axis = 1)
 del prior_orders
 del users_last_order
 gc.collect()
@@ -176,6 +188,10 @@ feature_vector['ordered_last_time'] = feature_vector['ordered_last_time'].fillna
 del u_p
 del last_orders
 gc.collect()
+feature_vector = feature_vector.merge(user_aisle, on=['user_id', 'aisle_id'], how='left')
+feature_vector = feature_vector.merge(user_depart, on=['user_id', 'department_id'], how='left')
+
+
 feature_vector['order_ratio'] = feature_vector['up_orders'] / feature_vector['orders_sum']
 feature_vector['delta_days_since_prior_order'] = abs(feature_vector['up_days_since_prior_order'] - feature_vector['days_since_prior_order'])
 feature_vector['delta_order_hour_of_day'] = abs(feature_vector['up_avg_hour'] - feature_vector['order_dow'])
@@ -188,7 +204,7 @@ features = ['order_dow', 'order_hour_of_day', 'days_since_prior_order',
         'reorder_rate', 'order_total','avg_add_to_cart_order', 'day_count', 'hour_count',
         'reorder_total', 'orders_sum', 'days_since_prior_std','avg_basket', 'avg_reorder', 'num_unique_items',
         'aisle_id', 'department_id', 'up_orders', 'up_reorders', 'up_reorder_rate', 'up_add_to_cart_order',
-        'up_days_since_prior_order', 'order_ratio', 'delta_dow', 'delta_order_hour_of_day', 'ordered_last_time',
+        'up_days_since_prior_order', 'order_ratio', 'delta_dow', 'delta_order_hour_of_day', 'ordered_last_time', 'aisle_orders', 'depart_orders',
         'numbers_since_last_order',
         'comp_size', 'avg_diff', 'std_diff']
 #'comp_size', 'avg_diff', 'std_diff'
