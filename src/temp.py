@@ -225,7 +225,6 @@ params = {
     'boosting_type': 'gbdt',
     'objective': 'binary',
     'metric': {'binary_logloss'},
-    'num_leaves': 96,
     'max_depth': 10,
     'learning_rate': 0.05,
     'num_leaves': 81,
@@ -279,7 +278,7 @@ Then combine products within the same order together
 Write output to out.csv
 """
 """Threshold settings"""
-threshold = 0.21
+threshold = 0.18
 result = result[result['confidence'] >= threshold]
 result = result.groupby('order_id')['product_id'].apply(list).reset_index()
 result.columns = ['order_id', 'products']
