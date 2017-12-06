@@ -96,7 +96,6 @@ if arg == 0:
         return data[data.day_count.isin(data.day_count.nlargest(3))]
     product_day_freq_max = product_day_freq.groupby('product_id', group_keys=False).apply(dayFrequency)
     product_day_freq_max['day_count'] = 1
-    product_day_freq_max = product_day_freq_max.rename(columns={'day_count': 'max_day'})
     product_day_freq = product_day_freq.merge(product_day_freq_max, on=['product_id', 'order_dow'], how='left').fillna(0)
     del product_day_freq_max
     product_day_freq.to_csv(DIR + "product_day_freq.csv", encoding='utf-8', index=False)
@@ -107,7 +106,6 @@ if arg == 0:
         return data[data.hour_count.isin(data.hour_count.nlargest(3))]
     product_hour_freq_max = product_hour_freq.groupby('product_id', group_keys=False).apply(hourFrequency)
     product_hour_freq_max['hour_count'] = 1
-    product_hour_freq_max = product_hour_freq_max.rename(columns={'hour_count': 'max_hour'})
     product_hour_freq = product_hour_freq.merge(product_hour_freq_max, on=['product_id', 'order_hour_of_day'], how='left').fillna(0)
     del product_hour_freq_max
     product_hour_freq.to_csv(DIR + "product_hour_freq.csv", encoding='utf-8', index=False)
@@ -253,7 +251,7 @@ if arg == 1:                            # if arg == 1, train. If not, just outpu
         return feature_vector, labels
 
     features = ['order_dow', 'order_hour_of_day', 'days_since_prior_order',
-            'reorder_rate', 'order_total','avg_add_to_cart_order', 'day_count', 'hour_count', 'max_day', 'max_hour',
+            'reorder_rate', 'order_total','avg_add_to_cart_order', 'day_count', 'hour_count',
             'reorder_total', 'orders_sum', 'days_since_prior_std','avg_basket', 'avg_reorder', 'num_unique_items',
             'aisle_id', 'department_id', 'up_orders', 'up_reorders', 'up_reorder_rate', 'up_add_to_cart_order',
             'up_days_since_prior_order', 'order_ratio', 'delta_dow', 'delta_order_hour_of_day', 'ordered_last_time',
