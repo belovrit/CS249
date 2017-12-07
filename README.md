@@ -58,4 +58,4 @@ We manually extracted 35 features based on the data given.
 * **Zhiwen Hu**
 * **Linzuo Li**
 * **Alex Wang**
-* **Zhiwen Hu**
+* **Xiao Zeng**
