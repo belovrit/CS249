@@ -66,14 +66,14 @@ You can download them at
 ```
 This will run all the programs necessary to compute 35 features we have for this project. The results will be saved at **data/processed/*.csv**
 
-#### Train and Predict
+### Train and Predict
 ```
 ./predict.sh
 ```
 
 This will use both LightGBM and XGBoost independently to train and predict the data set. The prediction results will be saved at **data/predict/*.csv**
 
-#### Train and Predict
+### Submit
 ```
 cd /src
 python submit.py
@@ -93,7 +93,7 @@ python submit.py -l LWEIGHT -x XWEIGHT --threshold THRESHOLDS
 
 - XWEIGHT: weight constant on XGBoost predictions (Default: 0)
 
-- THRESHOLDS: output threshold for binary classification (Default: 18)
+- THRESHOLDS: output threshold for binary classification (Default: 0.18)
 
 ## Authors
 
