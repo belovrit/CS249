@@ -66,34 +66,12 @@ You can download them at
 ```
 This will run all the programs necessary to compute 35 features we have for this project. The results will be saved at **data/processed/*.csv**
 
-### Train and Predict
+### Train/Predict and Submit
 ```
-./predict.sh
-```
-
-This will use both LightGBM and XGBoost independently to train and predict the data set. The prediction results will be saved at **data/predict/*.csv**
-
-### Submit
-```
-cd /src
-python submit.py
+./run.sh
 ```
 
-It will run with our default parameters to output a final submission file for Kaggle at
-**./out.csv**
-
-**or** run it with optional arguments
-
-```
-cd /src
-python submit.py -l LWEIGHT -x XWEIGHT --threshold THRESHOLDS
-```
-
-- LWEIGHT: weight constant on LightGBM predictions (Default: 1)
-
-- XWEIGHT: weight constant on XGBoost predictions (Default: 0)
-
-- THRESHOLDS: output threshold for binary classification (Default: 0.18)
+This will use both LightGBM and XGBoost independently to train and predict the data set. The prediction results will be saved at **data/predict/*.csv**. Then, final predictions from both model will be combined to produce a final submission file for Kaggle at
 
 ## Authors
 
