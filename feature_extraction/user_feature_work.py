@@ -7,7 +7,9 @@
 import pandas as pd
 import numpy as np
 
-file_dir = "..\\..\\data\\"
+file_dir = "..\\data\\"
+out_dir = file_dir + "predict\\"
+
 aisles = None
 #aisle_id, aisle
 
@@ -77,8 +79,8 @@ def main():
 #   average number of reorders, standard deviation of reorder number, and the number of unique
 #   items per user
 def clean_user_info():
-    rfile = open(file_dir + "user_info_1.csv", "r")
-    wfile = open(file_dir + "user_info_2.csv", "w")
+    rfile = open(out_dir + "user_info_1.csv", "r")
+    wfile = open(out_dir + "user_info_2.csv", "w")
     lines = rfile.readlines()
     global order_products__train
     global order_products__prior
@@ -177,7 +179,7 @@ def prepare_user_dict():
     num_users = 206209
 
     #initialize output file and write header
-    wfile = open(file_dir + "user_info_1.csv", "w")
+    wfile = open(out_dir + "user_info_1.csv", "w")
     wfile.write("user_id,orders_sum,orders,sum_reorder,sum_basket_size,"+
                 "sum_unique_item_per_basket,days_since_prior_avg,days_since_prior_std,"+
                 "eval_list,dow_list,hour_list\n")
@@ -211,7 +213,7 @@ def prepare_user_dict():
 
 #returns a dictionary object representing the contents of the given .csv file
 def get_file_dict(fileName):
-    rfile = open(file_dir + fileName, "r", encoding="utf-8")
+    rfile = open(out_dir + fileName, "r", encoding="utf-8")
     lines = rfile.readlines()
     aisles = {}
 

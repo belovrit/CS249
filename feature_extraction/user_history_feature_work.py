@@ -12,7 +12,9 @@ import pandas as pd
 import lightgbm as lgb
 import csv
 import os
-DIR = '../../data/'
+DIR = "..\\data\\"
+out_dir = DIR + "predict\\"
+
 
 #Load past csv information
 priors = pd.read_csv(DIR + 'order_products__prior.csv', dtype={
@@ -54,7 +56,7 @@ del priors
 
 #Bobby:
 u_features = ['user_id','orders_sum', 'days_since_prior_std','avg_basket', 'avg_reorder', 'num_unique_items']
-user_features = pd.read_csv(DIR + 'user_info.csv', dtype={
+user_features = pd.read_csv(out_dir + 'user_info_2.csv', dtype={
        'user_id': np.uint32,
        'orders_sum': np.uint16,
        'days_since_prior_std': np.float32,
@@ -72,8 +74,8 @@ order_sum_df = order_sum_df.rename(columns = {'order_number': 'ord_sum'}).reset_
 
 #Calculate the comparative differences between a users first orders and last orders
 print("DOING HISTORY COMP ANALYSIS")
-wfile = open(DIR + "num5_features.csv", "w")
-wfile.write("user,comp_size,avg_diff,std_diff\n")
+wfile = open(out_dir + "num5_features.csv", "w")
+wfile.write("comp_size,avg_diff,std_diff\n")
 
 cur = 0
 end = len(user_features)
@@ -102,7 +104,7 @@ for u in user_features['user_id']:
     std_diff = abs(np.std(comp_2) - np.std(comp_1))
     comp_size = abs(end_size - begin_size)
     
-    wfile.write(str(u) + "," + str(comp_size) + "," +
+    wfile.write(str(comp_size) + "," +
                 str(avg_diff) + "," + str(std_diff) + "\n")
 
 wfile.close()
@@ -110,9 +112,9 @@ print("COMP DONE")
 
 print("COMBINING ALL USER FEATURE FILES")
 
-wfile = open(DIR + "user_info.csv", "w")
-rfile1 = open(DIR + "user_info_2.csv", "r")
-rfile2 = open(DIR + "num5_features.csv", "r")
+wfile = open(out_dir + "user_info.csv", "w")
+rfile1 = open(out_dir + "user_info_2.csv", "r")
+rfile2 = open(out_dir + "num5_features.csv", "r")
 
 lines_1 = rfile1.readlines()
 lines_2 = rfile2.readlines()
@@ -129,16 +131,16 @@ rfile2.close()
 
 print("REMOVING TEMP FILES:")
 try:
-    os.remove(DIR + "user_info_1.csv")
+    os.remove(out_dir + "user_info_1.csv")
 except OSError:
     pass
 
 try:
-    os.remove(DIR + "user_info_2.csv")
+    os.remove(out_dir + "user_info_2.csv")
 except OSError:
     pass
 
 try:
-    os.remove(DIR + "num5_features.csv")
+    os.remove(out_dir + "num5_features.csv")
 except OSError:
     pass
