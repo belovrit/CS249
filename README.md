@@ -1,92 +1,59 @@
 # Instacart Market Basket Analysis
 
-## Team Members
-###### Robert Cowen
-###### Zhiwen Hu
-###### Linzuo Li
-###### Alex Wang
-###### Xiao Zeng
-
-## Getting Started
-
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
-
 ### Prerequisites
-```
-Python 3.0+
-numpy
-lightgbm
-pandas
-```
 
-### Installing
+- Python 3.0+
+- numpy
+- lightGBM
+- XGBoost
+- pandas
 
-A step by step series of examples that tell you have to get a development env running
+## The Task
+The task is to predict which products a user will reorder in their next order. The evaluation metric is the F1-score between the set of predicted products and the set of true products.
 
-Say what the step will be
+Below is the full data schema ([source](https://gist.github.com/jeremystan/c3b39d947d9b88b3ccff3147dbcf6c6b))
 
-```
-Give the example
-```
+ > `orders` (3.4m rows, 206k users):
+ > * `order_id`: order identifier
+ > * `user_id`: customer identifier
+ > * `eval_set`: which evaluation set this order belongs in (see `SET` described below)
+ > * `order_number`: the order sequence number for this user (1 = first, n = nth)
+ > * `order_dow`: the day of the week the order was placed on
+ > * `order_hour_of_day`: the hour of the day the order was placed on
+ > * `days_since_prior`: days since the last order, capped at 30 (with NAs for `order_number` = 1)
+ >
+ > `products` (50k rows):
+ > * `product_id`: product identifier
+ > * `product_name`: name of the product
+ > * `aisle_id`: foreign key
+ > * `department_id`: foreign key
+ >
+ > `aisles` (134 rows):
+ > * `aisle_id`: aisle identifier
+ > * `aisle`: the name of the aisle
+ >
+ > `deptartments` (21 rows):
+ > * `department_id`: department identifier
+ > * `department`: the name of the department
+ >
+ > `order_products__SET` (30m+ rows):
+ > * `order_id`: foreign key
+ > * `product_id`: foreign key
+ > * `add_to_cart_order`: order in which each product was added to cart
+ > * `reordered`: 1 if this product has been ordered by this user in the past, 0 otherwise
+ >
+ > where `SET` is one of the four following evaluation sets (`eval_set` in `orders`):
+ > * `"prior"`: orders prior to that users most recent order (~3.2m orders)
+ > * `"train"`: training data supplied to participants (~131k orders)
+ > * `"test"`: test data reserved for machine learning competitions (~75k orders)
 
-And repeat
-
-```
-until finished
-```
-
-End with an example of getting some data out of the system or using it for a little demo
-
-## Running the tests
-
-Explain how to run the automated tests for this system
-
-### Break down into end to end tests
-
-Explain what these tests test and why
-
-```
-Give an example
-```
-
-### And coding style tests
-
-Explain what these tests test and why
-
-```
-Give an example
-```
-
-## Deployment
-
-Add additional notes about how to deploy this on a live system
-
-## Built With
-
-* [Dropwizard](http://www.dropwizard.io/1.0.2/docs/) - The web framework used
-* [Maven](https://maven.apache.org/) - Dependency Management
-* [ROME](https://rometools.github.io/rome/) - Used to generate RSS Feeds
-
-## Contributing
-
-Please read [CONTRIBUTING.md](https://gist.github.com/PurpleBooth/b24679402957c63ec426) for details on our code of conduct, and the process for submitting pull requests to us.
-
-## Versioning
-
-We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/your/project/tags).
+## The Approach
+We manually extracted 35 features based on the data given.
 
 ## Authors
 
-* **Billie Thompson** - *Initial work* - [PurpleBooth](https://github.com/PurpleBooth)
-
-See also the list of [contributors](https://github.com/your/project/contributors) who participated in this project.
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
-
-## Acknowledgments
-
-* Hat tip to anyone who's code was used
-* Inspiration
-* etc
+* **Robert Cowen**
+* **Zhiwen Hu**
+* **Linzuo Li**
+* **Alex Wang**
+* **Zhiwen Hu**
