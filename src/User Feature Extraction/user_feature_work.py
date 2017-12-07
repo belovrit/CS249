@@ -1,23 +1,13 @@
-import sys
-#sys.path.insert(0, 'C:\\Users\\astro_000\\git\\RESEARCH_WordModel\\BNC')
-#import bncWork
+###############################'
+#   user_feature_work.py
+#   Author: Team ZLABS
+#   Created for UCLA CS249
+###############################
 
-import nltk
-import re
-import os
-import hashlib
-import time
-import operator
-import math
 import pandas as pd
 import numpy as np
-from nltk.stem import WordNetLemmatizer
-from nltk.stem.snowball import EnglishStemmer
-from nltk.cluster.api import ClusterI
-from random import randint
-from shutil import copyfile
 
-file_dir = "C:\\Users\\astro\\Desktop\\School\\CSCI249\\Project\\instacart_2017_05_01\\"
+file_dir = "..\\..\\data\\"
 aisles = None
 #aisle_id, aisle
 
@@ -41,10 +31,14 @@ user_info = None
 #   dow_list, hour_list, avg_basket, std_basket, basket_list, avg_reorder,
 #   std_reorder, reorder_list, num_unique_items
 
+#Determines whether output will display info on computational progress
+infoDisplay = True
 
-
+#Keep track of user information for writing
 user_dict = {}
 
+
+#prep info from exisiting info files
 def main():
 
     global aisles
@@ -76,10 +70,15 @@ def main():
     user_info = pd.read_csv(file_dir + "user_info.csv")
     print("user_info DONE")
 
+
+
+#Create new csv file with additional user_info based on information contained within
+#   prexisting csv. Calculates the Average basket size, standard Deviation of basket size,
+#   average number of reorders, standard deviation of reorder number, and the number of unique
+#   items per user
 def clean_user_info():
-    mark = 9
-    rfile = open(file_dir + "user_info.csv", "r")
-    wfile = open(file_dir + "user_info_new_" + str(mark - 1) + ".csv", "w")
+    rfile = open(file_dir + "user_info_1.csv", "r")
+    wfile = open(file_dir + "user_info_2.csv", "w")
     lines = rfile.readlines()
     global order_products__train
     global order_products__prior
@@ -90,25 +89,27 @@ def clean_user_info():
                 "avg_reorder,std_reorder,reorder_list,num_unique_items\n")
     num_users = len(lines) - 1
 
-    offset = 11500
 
-    base = 40133 + 1
-    begin = (base * 4) + (offset * (mark - 4))
-    end = begin + offset
+    #USED SOLELY FOR DIVIDING UP THE COMPUTATION
+    #offset = 11500
+    #base = 40133 + 1
+    #begin = (base * 4) + (offset * (mark - 4))
+    #end = begin + offset
+    #if(end > (num_users + 1)):
+    #    end = num_users + 1
 
+    begin = 0
+    end = num_users + 1
     cur_user = 0
-
-    if(end > (num_users + 1)):
-        end = num_users + 1
-
-    begin = 40132
-    end = 40134
-        
+     
 
     for line in lines[begin:end]:
-        cur_user = cur_user + 1
-        print((cur_user / (end - begin)) * 100)
         
+        if(infoDisplay)
+            cur_user = cur_user + 1
+            print((cur_user / (end - begin)) * 100)
+
+        #0btain information from the preexisitng user info file
         u = (line.split("\n")[0]).split(",")
         order_ids = u[2]
         eval_ids = u[5]
@@ -124,6 +125,8 @@ def clean_user_info():
         size_list = []
         reordered_list = []
 
+        #iterate through all user orders and calculate information conerning
+        #   them for writing
         for i in range(len(order_ids)):
             o_id = int(order_ids[i])
             
@@ -133,7 +136,6 @@ def clean_user_info():
                 df = order_products__prior
 
             order = df[df['order_id'] == o_id]
-            #print(order)
 
             basket_size = len(order['reordered'])
             num_reordered = np.sum(order['reordered'])
@@ -147,8 +149,8 @@ def clean_user_info():
             num_unique = total_basket_size - total_reordered
             total_unique = total_unique + num_unique
 
-            #print(basket_size, num_reordered)
 
+        #Calculate the remaining information and write to file
         avg_basket = total_basket_size / num_baskets
         avg_reordered = total_reordered / num_baskets
         std_basket = np.std(size_list)
@@ -159,8 +161,6 @@ def clean_user_info():
 
         str_basket_list = str(size_list)
         str_basket_list = re.sub(r', ', ":", str_basket_list)
-
-        #print(avg_basket, avg_reordered, std_basket, std_reordered)
         
         wfile.write(line.split("\n")[0] + "," + str(avg_basket) + "," +
         str(std_basket) + "," + str(str_basket_list) + "," + str(avg_reordered) + "," +
@@ -170,18 +170,24 @@ def clean_user_info():
     wfile.close()
     rfile.close()
 
+#computes the initial user information for the sum of orders, days_since_prior_avg,
+#   days_since_prior_std, eval_list, order_list, dow_list, hour_list
 def prepare_user_dict():
     global user_dict
     num_users = 206209
 
-    wfile = open(file_dir + "user_info.csv", "w")
+    #initialize output file and write header
+    wfile = open(file_dir + "user_info_1.csv", "w")
     wfile.write("user_id,orders_sum,orders,sum_reorder,sum_basket_size,"+
                 "sum_unique_item_per_basket,days_since_prior_avg,days_since_prior_std,"+
                 "eval_list,dow_list,hour_list\n")
     
     #order_id, user_id, eval_set, order_number, order_dow, order_hour_of_day, days_since_prior_order
-    for user_id in range(1, 206209 + 1):
-        print((user_id / num_users) * 100)
+    #   calculated and written to file for each user
+    for user_id in range(1, num_users + 1):
+        
+        if(infoDisplay):
+            print((user_id / num_users) * 100)     
         u = orders[orders['user_id'] == user_id]
 
         u_list = u.values.T.tolist()
@@ -199,18 +205,11 @@ def prepare_user_dict():
                     str(v[2]) + ":" + str(v[3]) + ":" + str(v[4]) +
                     str(v[5]) + ":" + str(v[6]) + ":" + str(v[7]) + ":" +
                     str(v[8]) + "," + str(v[9]) + "\n")
-
-
-    #print("NOW MAKING FILE:")
-    #wfile = open(file_dir + "user_info.csv", "w")
-
-    #for k in user_dict:
-    #    v = user_dict[k]
-    #    wfile.write(str(k) + "," + str(v[0]) + "," + str(v[1]) + "," +
-    #                str(v[2]) + "," + str(v[3]) + "," + str(v[4]) +
-    #                str(v[5]) + "," + str(v[6]) + "," + str(v[7]) + "\n")
+        
     wfile.close()
 
+
+#returns a dictionary object representing the contents of the given .csv file
 def get_file_dict(fileName):
     rfile = open(file_dir + fileName, "r", encoding="utf-8")
     lines = rfile.readlines()
@@ -231,3 +230,5 @@ def get_file_dict(fileName):
     return aisles
 
 main()
+prepare_user_dict()
+clean_user_info()
