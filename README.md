@@ -8,6 +8,8 @@
 - XGBoost
 - pandas
 
+> To meet the prereqs, please see [INSTALL.md](https://gist.github.com/jeremystan/c3b39d947d9b88b3ccff3147dbcf6c6b)
+
 ## The Task
 The task is to predict which products a user will reorder in their next order. The evaluation metric is the F1-score between the set of predicted products and the set of true products.
 
