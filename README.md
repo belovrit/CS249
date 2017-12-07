@@ -8,7 +8,7 @@
 - XGBoost
 - pandas
 
-> To meet the prereqs, please see [INSTALL.md](https://gist.github.com/jeremystan/c3b39d947d9b88b3ccff3147dbcf6c6b)
+> To meet the prereqs, please see [INSTALL.md](https://github.com/belovrit/CS249/blob/submission/INSTALL.md)
 
 ## The Task
 The task is to predict which products a user will reorder in their next order. The evaluation metric is the F1-score between the set of predicted products and the set of true products.
@@ -66,7 +66,7 @@ You can download them at
 ```
 This will run all the programs necessary to compute 35 features we have for this project. The results will be saved at **data/processed/*.csv**
 
-### Train/Predict and Submit
+### Submit
 ```
 ./run.sh
 ```
