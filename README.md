@@ -50,7 +50,50 @@ Below is the full data schema ([source](https://gist.github.com/jeremystan/c3b39
  > * `"test"`: test data reserved for machine learning competitions (~75k orders)
 
 ## The Approach
-We manually extracted 35 features based on the data given.
+We manually extracted 35 features based on the data given. And used LightGBM and XGBoost as our top level model. Then, a weighted average from these two models are combined as our final result.
+
+## Running
+We have provided all the features .csv files in a google drive where you can download them and put them in corresponding folders.
+
+You can download them at
+
+#### Generate feature csv files (Optional, not recommended)
+
+>Since We have included all the necessary feature files (.csv files in data/ folders). So it is not recommended to run them again and compute yourself. You can skip this to the next step, but if you want to:
+>
+```
+./compute_features.sh
+```
+This will run all the programs necessary to compute 35 features we have for this project. The results will be saved at **data/processed/*.csv**
+
+#### Train and Predict
+```
+./predict.sh
+```
+
+This will use both LightGBM and XGBoost independently to train and predict the data set. The prediction results will be saved at **data/predict/*.csv**
+
+#### Train and Predict
+```
+cd /src
+python submit.py
+```
+
+It will run with our default parameters to output a final submission file for Kaggle at
+**./out.csv**
+
+**or** run it with optional arguments
+
+```
+cd /src
+python submit.py -l LWEIGHT -x XWEIGHT --threshold THRESHOLDS
+```
+
+- LWEIGHT: weight constant on LightGBM predictions (Default: 1)
+
+- XWEIGHT: weight constant on XGBoost predictions (Default: 0)
+
+- THRESHOLDS: output threshold for binary classification (Default: 18)
 
 ## Authors
 
