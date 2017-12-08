@@ -10,7 +10,7 @@ import os
 
 base_dir = os.getcwd()
 file_dir = base_dir + "/../data/"
-out_dir = file_dir + "predict/"
+out_dir = file_dir + "processed/"
 
 aisles = None
 #aisle_id, aisle
@@ -51,7 +51,6 @@ def main():
     global orders
     global order_products__train
     global order_products__prior
-    global user_info
     
     aisles = df = pd.read_csv(file_dir + "aisles.csv")
     print("AISLES DONE")
@@ -70,9 +69,6 @@ def main():
 
     order_products__prior = pd.read_csv(file_dir + "order_products__prior.csv")
     print("order_products__prior DONE")
-
-    user_info = pd.read_csv(file_dir + "user_info.csv")
-    print("user_info DONE")
 
 
 

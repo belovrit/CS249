@@ -15,7 +15,7 @@ import os
 
 base_dir = os.getcwd()
 DIR = base_dir + "/../data/"
-out_dir = DIR + "predict/"
+out_dir = DIR + "processed/"
 
 
 #Load past csv information
