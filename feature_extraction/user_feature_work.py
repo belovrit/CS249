@@ -36,7 +36,7 @@ user_info = None
 #   std_reorder, reorder_list, num_unique_items
 
 #Determines whether output will display info on computational progress
-infoDisplay = True
+infoDisplay = False
 
 #Keep track of user information for writing
 user_dict = {}
@@ -230,5 +230,9 @@ def get_file_dict(fileName):
     return aisles
 
 main()
+print("Making Initial csv...")
 prepare_user_dict()
+print("\tDone")
+print("Making Additional csv...")
 clean_user_info()
+print("\tDone")

@@ -16,6 +16,7 @@ import os
 base_dir = os.getcwd()
 DIR = base_dir + "/../data/"
 out_dir = DIR + "processed/"
+willDisplay = False
 
 
 #Load past csv information
@@ -82,8 +83,10 @@ wfile.write("comp_size,avg_diff,std_diff\n")
 cur = 0
 end = len(user_features)
 for u in user_features['user_id']:
-    cur = cur+1
-    print((cur/end) * 100)
+
+    if(willDisplay):
+        cur = cur+1
+        print((cur/end) * 100)
     
     df = (order_sum_df.loc[order_sum_df['user_id'] == u])
     num_orders = max(df['order_number'])
