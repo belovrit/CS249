@@ -13,7 +13,7 @@
 ## The Task
 The task is to predict which products a user will reorder in their next order. The evaluation metric is the F1-score between the set of predicted products and the set of true products.
 
-Below is the full data schema ([source](https://gist.github.com/jeremystan/c3b39d947d9b88b3ccff3147dbcf6c6b))
+Below is the full data schema ([source](https://www.kaggle.com/c/instacart-market-basket-analysis/data))
 
  > `orders` (3.4m rows, 206k users):
  > * `order_id`: order identifier
@@ -71,7 +71,7 @@ This will run all the programs necessary to compute 35 features we have for this
 ./run.sh
 ```
 
-This will use both LightGBM and XGBoost independently to train and predict the data set. The prediction results will be saved at **data/predict/*.csv**. Then, final predictions from both model will be combined to produce a final submission file for Kaggle at
+This will use both LightGBM and XGBoost independently to train and predict the data set. The prediction results will be saved at **data/predict/*.csv**. Then, final predictions from both model will be combined to produce a final submission file for Kaggle at **./out.csv**
 
 ## Authors
 
