@@ -175,8 +175,7 @@ def prepare_user_dict():
 
     #initialize output file and write header
     wfile = open(out_dir + "user_info_1.csv", "w")
-    wfile.write("user_id,orders_sum,orders,sum_reorder,sum_basket_size,"+
-                "sum_unique_item_per_basket,days_since_prior_avg,days_since_prior_std,"+
+    wfile.write("user_id,orders_sum,orders,days_since_prior_std,"+
                 "eval_list,dow_list,hour_list\n")
     
     #order_id, user_id, eval_set, order_number, order_dow, order_hour_of_day, days_since_prior_order
@@ -227,7 +226,7 @@ def get_file_dict(fileName):
 
 main()
 print("Making Initial csv...")
-#prepare_user_dict()
+prepare_user_dict()
 print("\tDone")
 print("Making Additional csv...")
 clean_user_info()
