@@ -98,7 +98,7 @@ def clean_user_info():
     #if(end > (num_users + 1)):
     #    end = num_users + 1
 
-    begin = 0
+    begin = 1
     end = num_users + 1
     cur_user = 0
      
@@ -112,7 +112,7 @@ def clean_user_info():
         #0btain information from the preexisitng user info file
         u = (line.split("\n")[0]).split(",")
         order_ids = u[2]
-        eval_ids = u[5]
+        eval_ids = u[4]
         
         order_ids = ((order_ids.split("[")[1]).split("]")[0]).split(":")
         eval_ids  = ((eval_ids.split("[")[1]).split("]")[0]).split(":")
@@ -157,14 +157,11 @@ def clean_user_info():
         std_reordered = np.std(reordered_list)
 
         str_reordered_list = str(reordered_list)
-        str_reordered_list = re.sub(r', ', ":", str_reordered_list)
-
         str_basket_list = str(size_list)
-        str_basket_list = re.sub(r', ', ":", str_basket_list)
         
         wfile.write(line.split("\n")[0] + "," + str(avg_basket) + "," +
-        str(std_basket) + "," + str(str_basket_list) + "," + str(avg_reordered) + "," +
-        str(std_reordered) + "," + str(str_reordered_list) + "," + str(total_unique) + "\n")
+        str(std_basket) + "," + str(str_basket_list).replace(",", ":") + "," + str(avg_reordered) + "," +
+        str(std_reordered) + "," + str(str_reordered_list).replace(",", ":") + "," + str(total_unique) + "\n")
 
 
     wfile.close()
@@ -201,10 +198,9 @@ def prepare_user_dict():
 
         v = [orders_sum, order_list, -1, -1, -1, days_since_prior_avg, days_since_prior_std,
                               eval_list, dow_list, hour_list]
-        wfile.write(str(user_id) + ":" + str(v[0]) + ":" + str(v[1]) + ":" +
-                    str(v[2]) + ":" + str(v[3]) + ":" + str(v[4]) +
-                    str(v[5]) + ":" + str(v[6]) + ":" + str(v[7]) + ":" +
-                    str(v[8]) + "," + str(v[9]) + "\n")
+        wfile.write(str(user_id) + "," + str(orders_sum) + "," + str(order_list).replace(",", ":") + "," +
+                    str(days_since_prior_std) + "," + str(eval_list).replace(",", ":") + "," +
+                    str(dow_list).replace(",", ":") + "," + str(hour_list).replace(",", ":") + "\n")
         
     wfile.close()
 
@@ -231,7 +227,7 @@ def get_file_dict(fileName):
 
 main()
 print("Making Initial csv...")
-prepare_user_dict()
+#prepare_user_dict()
 print("\tDone")
 print("Making Additional csv...")
 clean_user_info()
