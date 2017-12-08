@@ -6,9 +6,11 @@
 
 import pandas as pd
 import numpy as np
+import os
 
-file_dir = "..\\data\\"
-out_dir = file_dir + "predict\\"
+base_dir = os.getcwd()
+file_dir = base_dir + "/../data/"
+out_dir = file_dir + "predict/"
 
 aisles = None
 #aisle_id, aisle
@@ -107,7 +109,7 @@ def clean_user_info():
 
     for line in lines[begin:end]:
         
-        if(infoDisplay)
+        if(infoDisplay):
             cur_user = cur_user + 1
             print((cur_user / (end - begin)) * 100)
 

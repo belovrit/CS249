@@ -12,8 +12,10 @@ import pandas as pd
 import lightgbm as lgb
 import csv
 import os
-DIR = "..\\data\\"
-out_dir = DIR + "predict\\"
+
+base_dir = os.getcwd()
+DIR = base_dir + "/../data/"
+out_dir = DIR + "predict/"
 
 
 #Load past csv information
