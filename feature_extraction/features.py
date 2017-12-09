@@ -114,7 +114,7 @@ user_depart = temp.groupby(['user_id', 'department_id'])['product_id'].count().t
 user_depart.columns = ['user_id', 'department_id', 'depart_orders']
 
 #Alex:
-print('Getting Alex')
+print('Getting Alex/Bobby')
 user_features = pd.DataFrame()
 user_features['mean_length_product_name'] = temp.groupby('user_id')['word_length_product_name'].mean()
 user_features = user_features.reset_index()
