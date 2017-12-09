@@ -15,12 +15,12 @@ args = parser.parse_args()
 if args.threshold:
 	threshold = args.threshold
 else:
-	threshold = 0.18
+	threshold = 0.2
 
 if args.xweight:
 	XGBoost_weight = args.xweight
 else:
-	XGBoost_weight = 0
+	XGBoost_weight = 0.1
 
 if args.lweight:
 	lightGBM_weight = args.lweight

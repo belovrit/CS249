@@ -21,11 +21,14 @@ test_x = test_x.replace([np.inf, -np.inf], np.nan).fillna(0)
 
 features = ['order_dow', 'order_hour_of_day', 'days_since_prior_order',
         'reorder_rate', 'order_total','avg_add_to_cart_order', 'day_count', 'hour_count',
-        'reorder_total', 'orders_sum', 'days_since_prior_std','avg_basket', 'avg_reorder', 'num_unique_items',
-        'aisle_id', 'department_id', 'up_orders', 'up_reorders', 'up_reorder_rate', 'up_add_to_cart_order',
-        'up_days_since_prior_order', 'order_ratio', 'delta_dow', 'delta_order_hour_of_day', 'ordered_last_time', 'aisle_orders', 'depart_orders',
-        'numbers_since_last_order', 'first_last', 'first_ordered_number', 'ratio_since_first_purchase', 'bought_times',
-        'comp_size', 'avg_diff', 'std_diff']
+        'reorder_total', 'aisle_id', 'department_id', 'up_orders', 'up_reorders', 'up_reorder_rate',
+        'up_add_to_cart_order', 'up_days_since_prior_order', 'delta_dow', 'delta_order_hour_of_day',
+        'ordered_last_time', 'aisle_orders', 'depart_orders', 'numbers_since_last_order', 'first_last',
+        'first_ordered_number', 'ratio_since_first_purchase', 'bought_times', 'like_organic',
+        'mean_length_product_name', 'user_order_sum', 'user_avg_interval'
+        ]
+
+
 
 #X_train, X_val, y_train, y_val = train_test_split(train_x[features], train_labels, test_size=0.9, random_state=42)
 

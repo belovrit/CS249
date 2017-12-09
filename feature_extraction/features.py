@@ -25,7 +25,6 @@ train = pd.read_csv(DIR + 'order_products__train.csv', dtype={
 
 print("loaded train")
 
-
 orders = pd.read_csv(DIR + 'orders.csv', dtype={
         'order_id': np.int32,
         'user_id': np.int32,
@@ -37,18 +36,20 @@ orders = pd.read_csv(DIR + 'orders.csv', dtype={
 
 print("loaded orders")
 
-
 products = pd.read_csv(DIR + 'products.csv', dtype={
         'product_id': np.uint16,
+        'product_name': np.str,
         'aisle_id': np.int16,
         'department_id': np.int16},
-        usecols=['product_id', 'aisle_id', 'department_id'])
+        usecols=['product_id', 'product_name', 'aisle_id', 'department_id'])
 
 print('loaded products')
 
-
 print('Joining data')
 # prior set
+products['word_length_product_name'] = products['product_name'].apply(lambda x: len(x.split()))
+products['organic_name'] = products['product_name'].apply(lambda x: x.lower().find('organic'))
+products['product_organic'] = products['organic_name'].apply(lambda x: 1 if x >= 0 else 0)
 prior_orders = pd.merge(priors, orders, on='order_id')
 prior_orders['up_id'] = (prior_orders['user_id'] * 100000 + prior_orders['product_id']  ).astype(np.uint64)
 del priors
@@ -83,12 +84,10 @@ product_hour_freq = product_hour_freq.rename(columns = {'order_hour_of_day': 'ho
 product_hour_freq.columns = ['product_id', 'order_hour_of_day', 'hour_count']
 gc.collect()
 
-
-
-#prior_orders['order_time_of_day'] = pd.cut(prior_orders['order_hour_of_day'], [0, 6, 12, 18, 23], labels=['midnight', 'morning', 'afternoon', 'night'])
-
 #user X product feature
 #calculating U_P featuers
+temp = prior_orders.merge(products, on='product_id', how='left')
+
 print('Generating user X product features')
 u_p = pd.DataFrame()
 u_p['up_orders'] = prior_orders.groupby('up_id')['reordered'].count()
@@ -102,39 +101,37 @@ u_p['last_ordered_number'] = prior_orders.groupby('up_id')['order_number'].max()
 u_p['first_ordered_number'] = prior_orders.groupby('up_id')['order_number'].min()
 u_p['first_last'] = u_p['last_ordered_number'] - u_p['first_ordered_number']
 u_p['bought_times'] = prior_orders.groupby('up_id').cumcount() + 1
-
+#Alex
+u_p['like_organic'] = temp.groupby('up_id')['product_organic'].sum()
 u_p = u_p.reset_index()
 
-
 print('Generating department and aisle features')
-temp = prior_orders.merge(products, on='product_id', how='left')
+
 user_aisle = temp.groupby(['user_id', 'aisle_id'])['product_id'].count().to_frame().reset_index()
 user_aisle.columns = ['user_id', 'aisle_id', 'aisle_orders']
 
 user_depart = temp.groupby(['user_id', 'department_id'])['product_id'].count().to_frame().reset_index()
 user_depart.columns = ['user_id', 'department_id', 'depart_orders']
 
+#Alex:
+print('Getting Alex')
+user_features = pd.DataFrame()
+user_features['mean_length_product_name'] = temp.groupby('user_id')['word_length_product_name'].mean()
+user_features = user_features.reset_index()
+temp2 = pd.DataFrame()
+temp3 = pd.DataFrame()
+user = pd.DataFrame()
+temp2['user_order_sum'] = orders.groupby('user_id')['order_id'].size()
+temp2 = temp2.reset_index()
+temp3['user_avg_interval'] = orders.groupby('user_id')['days_since_prior_order'].mean()
+temp3 = temp3.reset_index()
+user = pd.merge(temp2, temp3, on='user_id')
+del temp2
+del temp3
+user_features = pd.merge(user_features,user,on='user_id')
+del user
 del temp
 gc.collect()
-
-#Bobby:
-print('Getting Bobby')
-u_features = ['user_id','orders_sum', 'days_since_prior_std',
-              'avg_basket', 'avg_reorder', 'num_unique_items',
-              'comp_size', 'avg_diff', 'std_diff']
-user_features = pd.read_csv(DIR + 'processed/user_info.csv', dtype={
-       'user_id': np.uint32,
-       'orders_sum': np.uint16,
-       'days_since_prior_std': np.float32,
-       'avg_basket': np.float32,
-       'avg_reorder': np.float32,
-       'num_unique_items': np.uint16,
-       'comp_size': np.uint32,
-       'avg_diff': np.float32,
-       'std_diff': np.float32},
-       usecols=u_features)
-
-
 
 print('Getting sets by orders')
 users_last_order = prior_orders.groupby(['user_id'])['order_number'].max().to_frame().reset_index()
@@ -174,7 +171,7 @@ feature_vector['up_id'] = (feature_vector['user_id'] * 100000 + feature_vector['
 del s
 del user_products
 gc.collect()
-    # merge ordered product based on train set
+# merge ordered product based on train set
 feature_vector = feature_vector.merge(train, on=['order_id', 'product_id'], how='left')
 feature_vector['reordered'] = feature_vector['reordered'].fillna(0)
 feature_vector['reordered'] = feature_vector['reordered'].astype(np.uint8)
@@ -182,7 +179,6 @@ print('Merging features')
 feature_vector = feature_vector.merge(products, on='product_id', how='left')
 del products
 
-#feature_vector['order_hour_of_day'] = pd.cut(feature_vector['order_hour_of_day'], [0, 6, 12, 18, 23], labels=['midnight', 'morning', 'afternoon', 'night'])
 feature_vector = feature_vector.merge(product_day_freq, on=['product_id', 'order_dow'], how='left')
 feature_vector = feature_vector.merge(product_hour_freq, on=['product_id', 'order_hour_of_day'], how='left')
 feature_vector = feature_vector.merge(user_features, on='user_id', how='left')
@@ -201,7 +197,7 @@ feature_vector = feature_vector.merge(user_aisle, on=['user_id', 'aisle_id'], ho
 feature_vector = feature_vector.merge(user_depart, on=['user_id', 'department_id'], how='left')
 
 
-feature_vector['order_ratio'] = feature_vector['up_orders'] / feature_vector['orders_sum']
+#feature_vector['order_ratio'] = feature_vector['up_orders'] / feature_vector['orders_sum']
 feature_vector['delta_days_since_prior_order'] = abs(feature_vector['up_days_since_prior_order'] - feature_vector['days_since_prior_order'])
 feature_vector['delta_order_hour_of_day'] = abs(feature_vector['up_avg_hour'] - feature_vector['order_dow'])
 #feature_vector['reorder_total_ratio'] = feature_vector['up_reorders'] / feature_vector['total_reorders']
@@ -213,27 +209,26 @@ print('\t Done')
 
 features = ['order_dow', 'order_hour_of_day', 'days_since_prior_order',
         'reorder_rate', 'order_total','avg_add_to_cart_order', 'day_count', 'hour_count',
-        'reorder_total', 'orders_sum', 'days_since_prior_std','avg_basket', 'avg_reorder', 'num_unique_items',
-        'aisle_id', 'department_id', 'up_orders', 'up_reorders', 'up_reorder_rate', 'up_add_to_cart_order',
-        'up_days_since_prior_order', 'order_ratio', 'delta_dow', 'delta_order_hour_of_day', 'ordered_last_time', 'aisle_orders', 'depart_orders',
-        'numbers_since_last_order', 'first_last', 'first_ordered_number', 'ratio_since_first_purchase', 'bought_times',
-        'comp_size', 'avg_diff', 'std_diff']
-#'comp_size', 'avg_diff', 'std_diff'
+        'reorder_total', 'aisle_id', 'department_id', 'up_orders', 'up_reorders', 'up_reorder_rate',
+        'up_add_to_cart_order', 'up_days_since_prior_order', 'delta_dow', 'delta_order_hour_of_day',
+        'ordered_last_time', 'aisle_orders', 'depart_orders', 'numbers_since_last_order', 'first_last',
+        'first_ordered_number', 'ratio_since_first_purchase', 'bought_times', 'like_organic',
+        'mean_length_product_name', 'user_order_sum', 'user_avg_interval']
 
 params = {
     'task': 'train',
     'boosting_type': 'gbdt',
     'objective': 'binary',
     'metric': {'binary_logloss'},
-    'max_depth': 10,
+    'max_depth': 5,
     'learning_rate': 0.05,
-    'num_leaves': 81,
+    'num_leaves': 32,
     'feature_fraction': 0.9,
     'bagging_fraction': 0.95,
     'bagging_freq': 5
 }
 
-num_round = 100
+num_round = 120
 print('Generating feature vectors')
 
 train_set = feature_vector[feature_vector['eval_set'] == 'train']
