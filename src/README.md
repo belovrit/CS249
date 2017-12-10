@@ -17,8 +17,8 @@ cd /src
 python submit.py -l LWEIGHT -x XWEIGHT --threshold THRESHOLDS
 ```
 
-- LWEIGHT: weight constant on LightGBM predictions (Default: 1)
+- LWEIGHT: weight constant on LightGBM predictions (Default: 0.4)
 
-- XWEIGHT: weight constant on XGBoost predictions (Default: 0)
+- XWEIGHT: weight constant on XGBoost predictions (Default: 0.6)
 
-- THRESHOLDS: output threshold for binary classification (Default: 0.18)
+- THRESHOLDS: output threshold for binary classification (Default: 0.20)
