@@ -53,11 +53,9 @@ Below is the full data schema ([source](https://www.kaggle.com/c/instacart-marke
 We manually extracted 35 features based on the data given. And used LightGBM and XGBoost as our top level model. Then, a weighted average from these two models are combined as our final result.
 
 ## Running
-We have provided all the features .csv files in a google drive where you can download them and put them in corresponding folders.
+We have provided a data folder with all .csv files in a google drive. Please go ahead and download them and replace them with the project's ./data/ folder
 
-You can download them at [google drive](https://drive.google.com/open?id=1LSmh5qglsCY4lGjRYmhIpkYzn5GP6nDN)
-
-#### Generate feature csv files (Optional, not recommended)
+You can download the data from [google drive](https://drive.google.com/open?id=1LSmh5qglsCY4lGjRYmhIpkYzn5GP6nDN)
 
 ### Submit
 ```
