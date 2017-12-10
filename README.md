@@ -50,7 +50,7 @@ Below is the full data schema ([source](https://www.kaggle.com/c/instacart-marke
  > * `"test"`: test data reserved for machine learning competitions (~75k orders)
 
 ## The Approach
-We manually extracted 35 features based on the data given. And used LightGBM and XGBoost as our top level model. Then, a weighted average from these two models are combined as our final result.
+We manually extracted 30 features based on the data given. And used LightGBM and XGBoost as our top level model. Then, a weighted average from these two models are combined as our final result.
 
 ## Running
 We have provided a data folder with all .csv files in a google drive. Please go ahead and download them and replace them with the project's ./data/ folder
