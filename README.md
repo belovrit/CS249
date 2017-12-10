@@ -55,26 +55,17 @@ We manually extracted 35 features based on the data given. And used LightGBM and
 ## Running
 We have provided all the features .csv files in a google drive where you can download them and put them in corresponding folders.
 
-You can download them at
+You can download them at [google drive](https://drive.google.com/open?id=1LSmh5qglsCY4lGjRYmhIpkYzn5GP6nDN)
 
 #### Generate feature csv files (Optional, not recommended)
-
->Since We have included all the necessary feature files (.csv files in data/ folders). So it is not recommended to run them again and compute yourself. You can skip this to the next step, but if you want to:
->
-```
-./compute_features.sh
-```
-This will run all the programs necessary to compute 35 features we have for this project. The results will be saved at **data/processed/*.csv**
 
 ### Submit
 ```
 ./run.sh
 ```
-
-This will use both LightGBM and XGBoost independently to train and predict the data set. The prediction results will be saved at **data/predict/*.csv**. Then, final predictions from both model will be combined to produce a final submission file for Kaggle at **./out.csv**
+This will first run all the programs necessary to compute 30 features. The results will be saved at **data/processed/*.csv**. Then it will run both LightGBM and XGBoost independently to train and predict the data set. The prediction results will be saved at **data/predict/*.csv**. Final predictions from both model will be combined (0.6 XGBoost, 0.4 LightGBM)to produce a submission file for Kaggle at **./out.csv**
 
 ## Authors
-
 * **Robert Cowen**
 * **Zhiwen Hu**
 * **Linzuo Li**

@@ -20,7 +20,7 @@ else:
 if args.xweight:
 	XGBoost_weight = args.xweight
 else:
-	XGBoost_weight = 0.1
+	XGBoost_weight = 0.6
 
 if args.lweight:
 	lightGBM_weight = args.lweight
